@@ -79,18 +79,23 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
   // Get or create session ID
   const sessionId = c.req.header("Mcp-Session-Id") || crypto.randomUUID();
 
+  console.log("SSE connection request for session:", sessionId);
+
   // Get the MCP access token from context
   const mcpAccessToken = (c as any).get("accessToken") as string;
 
   // Check for existing session
   const existingSession = sessionManager.getSession(sessionId);
   if (existingSession) {
+    console.log("Closing existing session");
     // Close existing transport if any
     await existingSession.transport.close();
     sessionManager.deleteSession(sessionId);
   }
 
   return streamSSE(c, async (stream) => {
+    console.log("Starting SSE stream for session:", sessionId);
+
     // Set session ID header
     c.header("Mcp-Session-Id", sessionId);
     c.header("Cache-Control", "no-cache");
@@ -99,6 +104,8 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
     // Create transport
     const transport = new HonoSSETransport();
     transport.attachStream(stream);
+
+    console.log("Transport created and stream attached");
 
     // Create new MCP server instance for this session
     const sessionServer = new McpServer(
@@ -114,6 +121,7 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
     );
 
     // Register Withings tools
+    console.log("Registering Withings tools...");
     sessionServer.registerTool(
       "get_user_devices",
       {
@@ -121,6 +129,7 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
         inputSchema: {},
       },
       async () => {
+        console.log("get_user_devices tool called");
         try {
           const devices = await getUserDevices(mcpAccessToken);
           return {
@@ -132,6 +141,7 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
             ],
           };
         } catch (error) {
+          console.error("Error fetching devices:", error);
           return {
             content: [
               {
@@ -145,12 +155,17 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
       }
     );
 
+    console.log("Tools registered successfully");
+
     try {
       // Connect server to transport
+      console.log("Connecting MCP server to transport...");
       await sessionServer.connect(transport);
+      console.log("MCP server connected successfully");
 
       // Store session
       sessionManager.createSession(sessionId, transport);
+      console.log("Session stored in session manager");
 
       // Handle connection close
       c.req.raw.signal.addEventListener("abort", () => {
@@ -186,7 +201,10 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
 app.post(mcpEndpoint, authenticateBearer, async (c) => {
   const sessionId = c.req.header("Mcp-Session-Id");
 
+  console.log("POST message received for session:", sessionId);
+
   if (!sessionId) {
+    console.error("POST request missing session ID");
     return c.json({
       error: "invalid_request",
       error_description: "Mcp-Session-Id header required"
@@ -195,6 +213,7 @@ app.post(mcpEndpoint, authenticateBearer, async (c) => {
 
   const session = sessionManager.getSession(sessionId);
   if (!session) {
+    console.error("Session not found:", sessionId);
     return c.json({
       error: "invalid_session",
       error_description: "Session not found or expired"
@@ -203,6 +222,7 @@ app.post(mcpEndpoint, authenticateBearer, async (c) => {
 
   try {
     const message = await c.req.json() as JSONRPCMessage;
+    console.log("Received JSON-RPC message:", { method: (message as any).method, id: (message as any).id });
 
     // Forward message to transport
     await session.transport.handleIncomingMessage(message);
