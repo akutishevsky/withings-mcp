@@ -7,6 +7,7 @@ import { tokenStore } from "./token-store.js";
 import { streamSSE } from "hono/streaming";
 import { HonoSSETransport, sessionManager } from "./mcp-transport.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
+import { getUserDevices } from "./withings-api.js";
 
 // Initialize stores
 await tokenStore.init();
@@ -56,7 +57,7 @@ const authenticateBearer = async (c: any, next: any) => {
   }
 
   // Store token in context for later use
-  c.set("accessToken", token);
+  c.set("accessToken" as any, token);
   await next();
 };
 
@@ -64,6 +65,9 @@ const authenticateBearer = async (c: any, next: any) => {
 app.get(mcpEndpoint, authenticateBearer, async (c) => {
   // Get or create session ID
   const sessionId = c.req.header("Mcp-Session-Id") || crypto.randomUUID();
+
+  // Get the MCP access token from context
+  const mcpAccessToken = (c as any).get("accessToken") as string;
 
   // Check for existing session
   const existingSession = sessionManager.getSession(sessionId);
@@ -96,8 +100,37 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
       }
     );
 
-    // TODO: Register tools on sessionServer
-    // Example: sessionServer.registerTool(...)
+    // Register Withings tools
+    sessionServer.registerTool(
+      "get_user_devices",
+      {
+        description: "Get list of user's Withings devices including device type, model, battery level, and last sync time",
+        inputSchema: {},
+      },
+      async () => {
+        try {
+          const devices = await getUserDevices(mcpAccessToken);
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(devices, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
 
     try {
       // Connect server to transport
