@@ -56,20 +56,32 @@ deno deploy env add WITHINGS_REDIRECT_URI "https://your-app.deno.dev/auth/callba
 3. After authorization, they are redirected back with an MCP token
 4. This token is used to authenticate MCP tool calls
 
-## MCP Connection
+## MCP Connection with Claude Desktop
 
-Configure Claude to connect to your server:
+Configure Claude Desktop to connect to your server. Add this to your Claude Desktop config file:
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "withings": {
-      "url": "https://your-app.deno.dev/sse",
-      "transport": "sse"
+      "url": "https://your-app.deno.dev",
+      "transport": {
+        "type": "sse",
+        "endpoint": "/mcp"
+      },
+      "auth": {
+        "type": "oauth2",
+        "discovery": "/.well-known/oauth-authorization-server"
+      }
     }
   }
 }
 ```
+
+When you restart Claude Desktop, it will initiate the OAuth flow and open your browser for authorization.
 
 ## Local Development
 
