@@ -93,13 +93,15 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
     sessionManager.deleteSession(sessionId);
   }
 
-  // Set headers BEFORE starting stream
+  console.log("Setting response headers with session ID:", sessionId);
+
+  // Set the session ID header
   c.header("Mcp-Session-Id", sessionId);
   c.header("Cache-Control", "no-cache");
-  c.header("X-Accel-Buffering", "no"); // Disable nginx buffering
+  c.header("X-Accel-Buffering", "no");
 
   return streamSSE(c, async (stream) => {
-    console.log("Starting SSE stream for session:", sessionId);
+    console.log("SSE stream started for session:", sessionId);
 
     // Create transport
     const transport = new HonoSSETransport();
@@ -156,6 +158,16 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
     );
 
     console.log("Tools registered successfully");
+
+    // Set up logging for transport messages
+    const originalOnMessage = transport.onmessage;
+    transport.onmessage = async (message) => {
+      console.log("Transport received message:", {
+        method: (message as any).method,
+        id: (message as any).id
+      });
+      await originalOnMessage(message);
+    };
 
     try {
       // Connect server to transport

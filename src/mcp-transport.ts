@@ -34,6 +34,13 @@ export class HonoSSETransport implements Transport {
     }
 
     try {
+      console.log("Transport sending message:", {
+        method: (message as any).method,
+        id: (message as any).id,
+        hasResult: !!(message as any).result,
+        hasError: !!(message as any).error,
+      });
+
       await this.stream.writeSSE({
         data: JSON.stringify(message),
         event: "message",
