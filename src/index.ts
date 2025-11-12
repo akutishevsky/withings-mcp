@@ -259,6 +259,15 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
             args.offset,
             args.data_fields
           );
+
+          // Remove category field from each workout in the series
+          if (workouts?.series) {
+            workouts.series = workouts.series.map((workout: any) => {
+              const { category, ...rest } = workout;
+              return rest;
+            });
+          }
+
           return {
             content: [
               {
@@ -531,6 +540,15 @@ app.post(mcpEndpoint, authenticateBearer, async (c) => {
                 args.offset,
                 args.data_fields
               );
+
+              // Remove category field from each workout in the series
+              if (workouts?.series) {
+                workouts.series = workouts.series.map((workout: any) => {
+                  const { category, ...rest } = workout;
+                  return rest;
+                });
+              }
+
               return {
                 content: [
                   {
