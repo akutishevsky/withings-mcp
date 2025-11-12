@@ -88,3 +88,82 @@ export async function getSleepSummary(
 
   return await makeWithingsRequest(mcpToken, "/v2/sleep", "getsummary", params);
 }
+
+/**
+ * Get measures (weight, height, blood pressure, heart rate, etc.)
+ */
+export async function getMeasures(
+  mcpToken: string,
+  meastype?: number,
+  meastypes?: string,
+  category?: number,
+  startdate?: number,
+  enddate?: number,
+  lastupdate?: number,
+  offset?: number
+): Promise<any> {
+  const params: Record<string, any> = {};
+
+  if (meastype !== undefined) {
+    params.meastype = meastype;
+  }
+
+  if (meastypes) {
+    params.meastypes = meastypes;
+  }
+
+  if (category !== undefined) {
+    params.category = category;
+  }
+
+  if (startdate !== undefined) {
+    params.startdate = startdate;
+  }
+
+  if (enddate !== undefined) {
+    params.enddate = enddate;
+  }
+
+  if (lastupdate !== undefined) {
+    params.lastupdate = lastupdate;
+  }
+
+  if (offset !== undefined) {
+    params.offset = offset;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/measure", "getmeas", params);
+}
+
+/**
+ * Get workout summaries
+ */
+export async function getWorkouts(
+  mcpToken: string,
+  startDateYmd?: string,
+  endDateYmd?: string,
+  lastUpdate?: number,
+  offset?: number,
+  dataFields?: string
+): Promise<any> {
+  const params: Record<string, any> = {};
+
+  if (lastUpdate) {
+    params.lastupdate = lastUpdate;
+  } else if (startDateYmd && endDateYmd) {
+    params.startdateymd = startDateYmd;
+    params.enddateymd = endDateYmd;
+  } else {
+    throw new Error("Either lastupdate or both startdateymd and enddateymd are required");
+  }
+
+  if (offset !== undefined) {
+    params.offset = offset;
+  }
+
+  if (dataFields) {
+    params.data_fields = dataFields;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/v2/measure", "getworkouts", params);
+}

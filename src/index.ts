@@ -7,7 +7,7 @@ import { tokenStore } from "./token-store.js";
 import { streamSSE } from "hono/streaming";
 import { HonoSSETransport, sessionManager } from "./mcp-transport.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
-import { getSleepSummary } from "./withings-api.js";
+import { getSleepSummary, getMeasures, getWorkouts } from "./withings-api.js";
 import { z } from "zod";
 
 // Initialize stores
@@ -188,6 +188,102 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
       }
     );
 
+    sessionServer.registerTool(
+      "get_measures",
+      {
+        description: "Get health measures including weight, height, body composition, blood pressure, heart rate, temperature, and more. Supports single or multiple measure types.",
+        inputSchema: {
+          meastype: z.number().optional().describe("Single measure type ID. Available types: 1=Weight(kg), 4=Height(m), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic BP(mmHg), 10=Systolic BP(mmHg), 11=Heart Pulse(bpm), 12=Temperature(°C), 54=SpO2(%), 71=Body Temperature(°C), 73=Skin Temperature(°C), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval(ECG), 136=PR interval(ECG), 137=QT interval(ECG), 138=Corrected QT interval(ECG), 139=Atrial fibrillation(PPG), 155=Vascular age, 167=Nerve Health Score, 168=Extracellular Water(kg), 169=Intracellular Water(kg), 170=Visceral Fat, 173=Fat Free Mass for segments, 174=Fat Mass for segments, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
+          meastypes: z.string().optional().describe("Comma-separated list of measure type IDs (e.g., '1,9,10' for weight and blood pressure). Available types: 1=Weight(kg), 4=Height(m), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic BP(mmHg), 10=Systolic BP(mmHg), 11=Heart Pulse(bpm), 12=Temperature(°C), 54=SpO2(%), 71=Body Temperature(°C), 73=Skin Temperature(°C), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval(ECG), 136=PR interval(ECG), 137=QT interval(ECG), 138=Corrected QT interval(ECG), 139=Atrial fibrillation(PPG), 155=Vascular age, 167=Nerve Health Score, 168=Extracellular Water(kg), 169=Intracellular Water(kg), 170=Visceral Fat, 173=Fat Free Mass for segments, 174=Fat Mass for segments, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
+          category: z.number().optional().describe("1 for real measures (default), 2 for user objectives"),
+          startdate: z.number().optional().describe("Start date as Unix timestamp"),
+          enddate: z.number().optional().describe("End date as Unix timestamp"),
+          lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated/created after this date. Use for synchronization instead of startdate/enddate"),
+          offset: z.number().optional().describe("Pagination offset. Use value from previous response when more=1"),
+        },
+      },
+      async (args: any) => {
+        console.log("get_measures tool called with args:", args);
+        try {
+          const measures = await getMeasures(
+            mcpAccessToken,
+            args.meastype,
+            args.meastypes,
+            args.category,
+            args.startdate,
+            args.enddate,
+            args.lastupdate,
+            args.offset
+          );
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(measures, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          console.error("Error fetching measures:", error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
+    sessionServer.registerTool(
+      "get_workouts",
+      {
+        description: "Get workout summaries including calories burned, heart rate data, distance, steps, elevation, and swimming metrics. Returns aggregated data for each workout session.",
+        inputSchema: {
+          startdateymd: z.string().optional().describe("Start date in YYYY-MM-DD format (e.g., '2024-01-15'). Required if lastupdate not provided."),
+          enddateymd: z.string().optional().describe("End date in YYYY-MM-DD format (e.g., '2024-01-20'). Required if startdateymd is provided."),
+          lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated or created after this date. Use this instead of date range for synchronization."),
+          offset: z.number().optional().describe("Pagination offset. Use value from previous response when more=true"),
+          data_fields: z.string().optional().describe("Comma-separated list of data fields to return. Available fields: calories=Active calories(Kcal), intensity=Workout intensity(0-100), manual_distance=User-entered distance(m), manual_calories=User-entered calories(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec), pause_duration=User pause time(sec), algo_pause_duration=Device-detected pause time(sec), spo2_average=Average SpO2(%), steps=Step count, distance=Distance(m), elevation=Floors climbed, pool_laps=Pool lap count, strokes=Stroke count, pool_length=Pool length(m). If not specified, all fields are returned."),
+        },
+      },
+      async (args: any) => {
+        console.log("get_workouts tool called with args:", args);
+        try {
+          const workouts = await getWorkouts(
+            mcpAccessToken,
+            args.startdateymd,
+            args.enddateymd,
+            args.lastupdate,
+            args.offset,
+            args.data_fields
+          );
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(workouts, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          console.error("Error fetching workouts:", error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
     console.log("Tools registered successfully");
 
     // Set up logging for transport messages
@@ -353,6 +449,102 @@ app.post(mcpEndpoint, authenticateBearer, async (c) => {
               };
             } catch (error) {
               console.error("Error fetching sleep data:", error);
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+                  },
+                ],
+                isError: true,
+              };
+            }
+          }
+        );
+
+        sessionServer.registerTool(
+          "get_measures",
+          {
+            description: "Get health measures including weight, height, body composition, blood pressure, heart rate, temperature, and more. Supports single or multiple measure types.",
+            inputSchema: {
+              meastype: z.number().optional().describe("Single measure type ID. Available types: 1=Weight(kg), 4=Height(m), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic BP(mmHg), 10=Systolic BP(mmHg), 11=Heart Pulse(bpm), 12=Temperature(°C), 54=SpO2(%), 71=Body Temperature(°C), 73=Skin Temperature(°C), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval(ECG), 136=PR interval(ECG), 137=QT interval(ECG), 138=Corrected QT interval(ECG), 139=Atrial fibrillation(PPG), 155=Vascular age, 167=Nerve Health Score, 168=Extracellular Water(kg), 169=Intracellular Water(kg), 170=Visceral Fat, 173=Fat Free Mass for segments, 174=Fat Mass for segments, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
+              meastypes: z.string().optional().describe("Comma-separated list of measure type IDs (e.g., '1,9,10' for weight and blood pressure). Available types: 1=Weight(kg), 4=Height(m), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic BP(mmHg), 10=Systolic BP(mmHg), 11=Heart Pulse(bpm), 12=Temperature(°C), 54=SpO2(%), 71=Body Temperature(°C), 73=Skin Temperature(°C), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval(ECG), 136=PR interval(ECG), 137=QT interval(ECG), 138=Corrected QT interval(ECG), 139=Atrial fibrillation(PPG), 155=Vascular age, 167=Nerve Health Score, 168=Extracellular Water(kg), 169=Intracellular Water(kg), 170=Visceral Fat, 173=Fat Free Mass for segments, 174=Fat Mass for segments, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
+              category: z.number().optional().describe("1 for real measures (default), 2 for user objectives"),
+              startdate: z.number().optional().describe("Start date as Unix timestamp"),
+              enddate: z.number().optional().describe("End date as Unix timestamp"),
+              lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated/created after this date. Use for synchronization instead of startdate/enddate"),
+              offset: z.number().optional().describe("Pagination offset. Use value from previous response when more=1"),
+            },
+          },
+          async (args: any) => {
+            console.log("get_measures tool called with args:", args);
+            try {
+              const measures = await getMeasures(
+                mcpToken,
+                args.meastype,
+                args.meastypes,
+                args.category,
+                args.startdate,
+                args.enddate,
+                args.lastupdate,
+                args.offset
+              );
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: JSON.stringify(measures, null, 2),
+                  },
+                ],
+              };
+            } catch (error) {
+              console.error("Error fetching measures:", error);
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+                  },
+                ],
+                isError: true,
+              };
+            }
+          }
+        );
+
+        sessionServer.registerTool(
+          "get_workouts",
+          {
+            description: "Get workout summaries including calories burned, heart rate data, distance, steps, elevation, and swimming metrics. Returns aggregated data for each workout session.",
+            inputSchema: {
+              startdateymd: z.string().optional().describe("Start date in YYYY-MM-DD format (e.g., '2024-01-15'). Required if lastupdate not provided."),
+              enddateymd: z.string().optional().describe("End date in YYYY-MM-DD format (e.g., '2024-01-20'). Required if startdateymd is provided."),
+              lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated or created after this date. Use this instead of date range for synchronization."),
+              offset: z.number().optional().describe("Pagination offset. Use value from previous response when more=true"),
+              data_fields: z.string().optional().describe("Comma-separated list of data fields to return. Available fields: calories=Active calories(Kcal), intensity=Workout intensity(0-100), manual_distance=User-entered distance(m), manual_calories=User-entered calories(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec), pause_duration=User pause time(sec), algo_pause_duration=Device-detected pause time(sec), spo2_average=Average SpO2(%), steps=Step count, distance=Distance(m), elevation=Floors climbed, pool_laps=Pool lap count, strokes=Stroke count, pool_length=Pool length(m). If not specified, all fields are returned."),
+            },
+          },
+          async (args: any) => {
+            console.log("get_workouts tool called with args:", args);
+            try {
+              const workouts = await getWorkouts(
+                mcpToken,
+                args.startdateymd,
+                args.enddateymd,
+                args.lastupdate,
+                args.offset,
+                args.data_fields
+              );
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: JSON.stringify(workouts, null, 2),
+                  },
+                ],
+              };
+            } catch (error) {
+              console.error("Error fetching workouts:", error);
               return {
                 content: [
                   {
