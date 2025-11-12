@@ -195,7 +195,6 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
         inputSchema: {
           meastype: z.number().optional().describe("Single measure type ID. Available types: 1=Weight(kg), 4=Height(m), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic BP(mmHg), 10=Systolic BP(mmHg), 11=Heart Pulse(bpm), 12=Temperature(°C), 54=SpO2(%), 71=Body Temperature(°C), 73=Skin Temperature(°C), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval(ECG), 136=PR interval(ECG), 137=QT interval(ECG), 138=Corrected QT interval(ECG), 139=Atrial fibrillation(PPG), 155=Vascular age, 167=Nerve Health Score, 168=Extracellular Water(kg), 169=Intracellular Water(kg), 170=Visceral Fat, 173=Fat Free Mass for segments, 174=Fat Mass for segments, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
           meastypes: z.string().optional().describe("Comma-separated list of measure type IDs (e.g., '1,9,10' for weight and blood pressure). Available types: 1=Weight(kg), 4=Height(m), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic BP(mmHg), 10=Systolic BP(mmHg), 11=Heart Pulse(bpm), 12=Temperature(°C), 54=SpO2(%), 71=Body Temperature(°C), 73=Skin Temperature(°C), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval(ECG), 136=PR interval(ECG), 137=QT interval(ECG), 138=Corrected QT interval(ECG), 139=Atrial fibrillation(PPG), 155=Vascular age, 167=Nerve Health Score, 168=Extracellular Water(kg), 169=Intracellular Water(kg), 170=Visceral Fat, 173=Fat Free Mass for segments, 174=Fat Mass for segments, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
-          category: z.number().optional().describe("1 for real measures (default), 2 for user objectives"),
           startdate: z.number().optional().describe("Start date as Unix timestamp"),
           enddate: z.number().optional().describe("End date as Unix timestamp"),
           lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated/created after this date. Use for synchronization instead of startdate/enddate"),
@@ -209,7 +208,6 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
             mcpAccessToken,
             args.meastype,
             args.meastypes,
-            args.category,
             args.startdate,
             args.enddate,
             args.lastupdate,
@@ -469,7 +467,6 @@ app.post(mcpEndpoint, authenticateBearer, async (c) => {
             inputSchema: {
               meastype: z.number().optional().describe("Single measure type ID. Available types: 1=Weight(kg), 4=Height(m), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic BP(mmHg), 10=Systolic BP(mmHg), 11=Heart Pulse(bpm), 12=Temperature(°C), 54=SpO2(%), 71=Body Temperature(°C), 73=Skin Temperature(°C), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval(ECG), 136=PR interval(ECG), 137=QT interval(ECG), 138=Corrected QT interval(ECG), 139=Atrial fibrillation(PPG), 155=Vascular age, 167=Nerve Health Score, 168=Extracellular Water(kg), 169=Intracellular Water(kg), 170=Visceral Fat, 173=Fat Free Mass for segments, 174=Fat Mass for segments, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
               meastypes: z.string().optional().describe("Comma-separated list of measure type IDs (e.g., '1,9,10' for weight and blood pressure). Available types: 1=Weight(kg), 4=Height(m), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic BP(mmHg), 10=Systolic BP(mmHg), 11=Heart Pulse(bpm), 12=Temperature(°C), 54=SpO2(%), 71=Body Temperature(°C), 73=Skin Temperature(°C), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval(ECG), 136=PR interval(ECG), 137=QT interval(ECG), 138=Corrected QT interval(ECG), 139=Atrial fibrillation(PPG), 155=Vascular age, 167=Nerve Health Score, 168=Extracellular Water(kg), 169=Intracellular Water(kg), 170=Visceral Fat, 173=Fat Free Mass for segments, 174=Fat Mass for segments, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
-              category: z.number().optional().describe("1 for real measures (default), 2 for user objectives"),
               startdate: z.number().optional().describe("Start date as Unix timestamp"),
               enddate: z.number().optional().describe("End date as Unix timestamp"),
               lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated/created after this date. Use for synchronization instead of startdate/enddate"),
@@ -483,7 +480,6 @@ app.post(mcpEndpoint, authenticateBearer, async (c) => {
                 mcpToken,
                 args.meastype,
                 args.meastypes,
-                args.category,
                 args.startdate,
                 args.enddate,
                 args.lastupdate,

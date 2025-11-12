@@ -96,7 +96,6 @@ export async function getMeasures(
   mcpToken: string,
   meastype?: number,
   meastypes?: string,
-  category?: number,
   startdate?: number,
   enddate?: number,
   lastupdate?: number,
@@ -110,10 +109,6 @@ export async function getMeasures(
 
   if (meastypes) {
     params.meastypes = meastypes;
-  }
-
-  if (category !== undefined) {
-    params.category = category;
   }
 
   if (startdate !== undefined) {
