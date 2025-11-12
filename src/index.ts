@@ -93,13 +93,13 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
     sessionManager.deleteSession(sessionId);
   }
 
+  // Set headers BEFORE starting stream
+  c.header("Mcp-Session-Id", sessionId);
+  c.header("Cache-Control", "no-cache");
+  c.header("X-Accel-Buffering", "no"); // Disable nginx buffering
+
   return streamSSE(c, async (stream) => {
     console.log("Starting SSE stream for session:", sessionId);
-
-    // Set session ID header
-    c.header("Mcp-Session-Id", sessionId);
-    c.header("Cache-Control", "no-cache");
-    c.header("X-Accel-Buffering", "no"); // Disable nginx buffering
 
     // Create transport
     const transport = new HonoSSETransport();
