@@ -7,7 +7,8 @@ import { tokenStore } from "./token-store.js";
 import { streamSSE } from "hono/streaming";
 import { HonoSSETransport, sessionManager } from "./mcp-transport.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
-import { getUserDevices } from "./withings-api.js";
+import { getSleepSummary } from "./withings-api.js";
+import { z } from "zod";
 
 // Initialize stores
 await tokenStore.init();
@@ -144,25 +145,36 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
     // Register Withings tools
     console.log("Registering Withings tools...");
     sessionServer.registerTool(
-      "get_user_devices",
+      "get_sleep_summary",
       {
-        description: "Get list of user's Withings devices including device type, model, battery level, and last sync time",
-        inputSchema: {},
+        description: "Get sleep summary data including sleep duration, sleep stages (light, deep, REM), heart rate, breathing quality, and sleep score. Returns aggregated sleep metrics for specified date range.",
+        inputSchema: {
+          startdateymd: z.string().optional().describe("Start date in YYYY-MM-DD format (e.g., '2024-01-15'). Required if lastupdate not provided."),
+          enddateymd: z.string().optional().describe("End date in YYYY-MM-DD format (e.g., '2024-01-20'). Required if startdateymd is provided."),
+          lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated or created after this date. Use this instead of date range for synchronization."),
+          data_fields: z.string().optional().describe("Comma-separated list of data fields to return (e.g., 'total_sleep_time,sleep_score,hr_average'). If not specified, all available fields are returned."),
+        },
       },
-      async () => {
-        console.log("get_user_devices tool called");
+      async (args: any) => {
+        console.log("get_sleep_summary tool called with args:", args);
         try {
-          const devices = await getUserDevices(mcpAccessToken);
+          const sleepData = await getSleepSummary(
+            mcpAccessToken,
+            args.startdateymd,
+            args.enddateymd,
+            args.lastupdate,
+            args.data_fields
+          );
           return {
             content: [
               {
                 type: "text",
-                text: JSON.stringify(devices, null, 2),
+                text: JSON.stringify(sleepData, null, 2),
               },
             ],
           };
         } catch (error) {
-          console.error("Error fetching devices:", error);
+          console.error("Error fetching sleep data:", error);
           return {
             content: [
               {
@@ -311,25 +323,36 @@ app.post(mcpEndpoint, authenticateBearer, async (c) => {
         // Register Withings tools
         console.log("Registering Withings tools...");
         sessionServer.registerTool(
-          "get_user_devices",
+          "get_sleep_summary",
           {
-            description: "Get list of user's Withings devices including device type, model, battery level, and last sync time",
-            inputSchema: {},
+            description: "Get sleep summary data including sleep duration, sleep stages (light, deep, REM), heart rate, breathing quality, and sleep score. Returns aggregated sleep metrics for specified date range.",
+            inputSchema: {
+              startdateymd: z.string().optional().describe("Start date in YYYY-MM-DD format (e.g., '2024-01-15'). Required if lastupdate not provided."),
+              enddateymd: z.string().optional().describe("End date in YYYY-MM-DD format (e.g., '2024-01-20'). Required if startdateymd is provided."),
+              lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated or created after this date. Use this instead of date range for synchronization."),
+              data_fields: z.string().optional().describe("Comma-separated list of data fields to return (e.g., 'total_sleep_time,sleep_score,hr_average'). If not specified, all available fields are returned."),
+            },
           },
-          async () => {
-            console.log("get_user_devices tool called");
+          async (args: any) => {
+            console.log("get_sleep_summary tool called with args:", args);
             try {
-              const devices = await getUserDevices(mcpToken);
+              const sleepData = await getSleepSummary(
+                mcpToken,
+                args.startdateymd,
+                args.enddateymd,
+                args.lastupdate,
+                args.data_fields
+              );
               return {
                 content: [
                   {
                     type: "text",
-                    text: JSON.stringify(devices, null, 2),
+                    text: JSON.stringify(sleepData, null, 2),
                   },
                 ],
               };
             } catch (error) {
-              console.error("Error fetching devices:", error);
+              console.error("Error fetching sleep data:", error);
               return {
                 content: [
                   {

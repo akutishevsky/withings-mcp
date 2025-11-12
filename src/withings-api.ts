@@ -62,8 +62,29 @@ export async function makeWithingsRequest(
 }
 
 /**
- * Get list of user's Withings devices
+ * Get sleep summary data
  */
-export async function getUserDevices(mcpToken: string): Promise<any> {
-  return await makeWithingsRequest(mcpToken, "/v2/user", "getdevice");
+export async function getSleepSummary(
+  mcpToken: string,
+  startDateYmd?: string,
+  endDateYmd?: string,
+  lastUpdate?: number,
+  dataFields?: string
+): Promise<any> {
+  const params: Record<string, any> = {};
+
+  if (lastUpdate) {
+    params.lastupdate = lastUpdate;
+  } else if (startDateYmd && endDateYmd) {
+    params.startdateymd = startDateYmd;
+    params.enddateymd = endDateYmd;
+  } else {
+    throw new Error("Either lastupdate or both startdateymd and enddateymd are required");
+  }
+
+  if (dataFields) {
+    params.data_fields = dataFields;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/v2/sleep", "getsummary", params);
 }
