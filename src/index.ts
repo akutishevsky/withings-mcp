@@ -249,19 +249,156 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
 
 // POST - Receive JSON-RPC messages from client
 app.post(mcpEndpoint, authenticateBearer, async (c) => {
-  const sessionId = c.req.header("Mcp-Session-Id");
+  let sessionId = c.req.header("Mcp-Session-Id");
   const mcpToken = (c as any).get("accessToken") as string;
 
   console.log("POST message received for session:", sessionId, "token:", mcpToken?.substring(0, 10));
 
+  // If no session ID, this is an initial POST that should establish SSE stream
   if (!sessionId) {
-    console.log("POST request without session ID - client hasn't established SSE yet, returning 400");
-    return c.json({
-      error: "invalid_request",
-      error_description: "Mcp-Session-Id header required. Please establish SSE connection first (GET /mcp)"
-    }, 400);
+    console.log("POST without session ID - initiating SSE stream");
+    sessionId = crypto.randomUUID();
+
+    // Get the JSON-RPC message first
+    const message = await c.req.json() as JSONRPCMessage;
+    console.log("Initial JSON-RPC message:", { method: (message as any).method, id: (message as any).id });
+
+    // Create SSE stream for response
+    const { readable, writable } = new TransformStream();
+    const writer = writable.getWriter();
+    const encoder = new TextEncoder();
+
+    const writeSSE = async (data: string, event?: string) => {
+      try {
+        if (event) {
+          await writer.write(encoder.encode(`event: ${event}\n`));
+        }
+        await writer.write(encoder.encode(`data: ${data}\n\n`));
+      } catch (error) {
+        console.error("Error writing SSE:", error);
+      }
+    };
+
+    // Create transport
+    const transport = new HonoSSETransport();
+    transport.attachStream({
+      writeSSE: async (data: { data: string; event?: string; id?: string }) => {
+        await writeSSE(data.data, data.event);
+      },
+      close: () => {
+        writer.close();
+      },
+    });
+
+    console.log("Transport created for POST-initiated stream");
+
+    // Start async initialization
+    (async () => {
+      try {
+        // Create new MCP server instance for this session
+        const sessionServer = new McpServer(
+          {
+            name: "withings-mcp",
+            version: "1.0.0",
+          },
+          {
+            capabilities: {
+              tools: {},
+            },
+          }
+        );
+
+        // Register Withings tools
+        console.log("Registering Withings tools...");
+        sessionServer.registerTool(
+          "get_user_devices",
+          {
+            description: "Get list of user's Withings devices including device type, model, battery level, and last sync time",
+            inputSchema: {},
+          },
+          async () => {
+            console.log("get_user_devices tool called");
+            try {
+              const devices = await getUserDevices(mcpToken);
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: JSON.stringify(devices, null, 2),
+                  },
+                ],
+              };
+            } catch (error) {
+              console.error("Error fetching devices:", error);
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+                  },
+                ],
+                isError: true,
+              };
+            }
+          }
+        );
+
+        console.log("Tools registered successfully");
+
+        // Connect server to transport
+        console.log("Connecting MCP server to transport...");
+        await sessionServer.connect(transport);
+        console.log("MCP server connected successfully");
+
+        // Store session
+        sessionManager.createSession(sessionId!, transport);
+        console.log("Session stored in session manager");
+
+        // Handle the initial message
+        console.log("Processing initial message...");
+        await transport.handleIncomingMessage(message);
+
+        // Handle connection close
+        c.req.raw.signal.addEventListener("abort", () => {
+          sessionManager.deleteSession(sessionId!);
+        });
+
+        // Keep connection alive - send heartbeat
+        const heartbeat = setInterval(async () => {
+          try {
+            await writeSSE("", "ping");
+          } catch (error) {
+            clearInterval(heartbeat);
+          }
+        }, 15000);
+
+        // Cleanup on abort
+        c.req.raw.signal.addEventListener("abort", () => {
+          clearInterval(heartbeat);
+          sessionManager.deleteSession(sessionId!);
+        });
+
+      } catch (error) {
+        console.error("Failed to establish MCP connection:", error);
+        sessionManager.deleteSession(sessionId!);
+        writer.close();
+      }
+    })();
+
+    // Return SSE response with session ID header
+    const headers = {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      "X-Accel-Buffering": "no",
+      "Mcp-Session-Id": sessionId,
+    };
+
+    console.log("Returning SSE stream with session ID:", sessionId);
+    return new Response(readable, { headers });
   }
 
+  // Existing session - handle message and return 202
   const session = sessionManager.getSession(sessionId);
   if (!session) {
     console.error("Session not found:", sessionId);
