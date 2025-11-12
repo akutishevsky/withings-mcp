@@ -193,8 +193,8 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
       {
         description: "Get health measures including weight, height, body composition, blood pressure, heart rate, temperature, and more. Supports single or multiple measure types.",
         inputSchema: {
-          meastype: z.number().optional().describe("Single measure type ID. Available types: 1=Weight(kg), 4=Height(m), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic BP(mmHg), 10=Systolic BP(mmHg), 11=Heart Pulse(bpm), 12=Temperature(°C), 54=SpO2(%), 71=Body Temperature(°C), 73=Skin Temperature(°C), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval(ECG), 136=PR interval(ECG), 137=QT interval(ECG), 138=Corrected QT interval(ECG), 139=Atrial fibrillation(PPG), 155=Vascular age, 167=Nerve Health Score, 168=Extracellular Water(kg), 169=Intracellular Water(kg), 170=Visceral Fat, 173=Fat Free Mass for segments, 174=Fat Mass for segments, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
-          meastypes: z.string().optional().describe("Comma-separated list of measure type IDs (e.g., '1,9,10' for weight and blood pressure). Available types: 1=Weight(kg), 4=Height(m), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic BP(mmHg), 10=Systolic BP(mmHg), 11=Heart Pulse(bpm), 12=Temperature(°C), 54=SpO2(%), 71=Body Temperature(°C), 73=Skin Temperature(°C), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval(ECG), 136=PR interval(ECG), 137=QT interval(ECG), 138=Corrected QT interval(ECG), 139=Atrial fibrillation(PPG), 155=Vascular age, 167=Nerve Health Score, 168=Extracellular Water(kg), 169=Intracellular Water(kg), 170=Visceral Fat, 173=Fat Free Mass for segments, 174=Fat Mass for segments, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
+          meastype: z.number().optional().describe("Single measure type ID. Available types: 1=Weight(kg), 4=Height(meter), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic Blood Pressure(mmHg), 10=Systolic Blood Pressure(mmHg), 11=Heart Pulse(bpm)-only for BPM and scale devices, 12=Temperature(celsius), 54=SP02(%), 71=Body Temperature(celsius), 73=Skin Temperature(celsius), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max is a numerical measurement of your body's ability to consume oxygen(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval duration based on ECG signal, 136=PR interval duration based on ECG signal, 137=QT interval duration based on ECG signal, 138=Corrected QT interval duration based on ECG signal, 139=Atrial fibrillation result from PPG, 155=Vascular age, 167=Nerve Health Score Conductance 2 electrodes Feet, 168=Extracellular Water in kg, 169=Intracellular Water in kg, 170=Visceral Fat(without unity), 173=Fat Free Mass for segments, 174=Fat Mass for segments in mass unit, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
+          meastypes: z.string().optional().describe("Comma-separated list of measure type IDs (e.g., '1,9,10' for weight and blood pressure). Available types: 1=Weight(kg), 4=Height(meter), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic Blood Pressure(mmHg), 10=Systolic Blood Pressure(mmHg), 11=Heart Pulse(bpm)-only for BPM and scale devices, 12=Temperature(celsius), 54=SP02(%), 71=Body Temperature(celsius), 73=Skin Temperature(celsius), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max is a numerical measurement of your body's ability to consume oxygen(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval duration based on ECG signal, 136=PR interval duration based on ECG signal, 137=QT interval duration based on ECG signal, 138=Corrected QT interval duration based on ECG signal, 139=Atrial fibrillation result from PPG, 155=Vascular age, 167=Nerve Health Score Conductance 2 electrodes Feet, 168=Extracellular Water in kg, 169=Intracellular Water in kg, 170=Visceral Fat(without unity), 173=Fat Free Mass for segments, 174=Fat Mass for segments in mass unit, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
           startdate: z.number().optional().describe("Start date as Unix timestamp"),
           enddate: z.number().optional().describe("End date as Unix timestamp"),
           lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated/created after this date. Use for synchronization instead of startdate/enddate"),
@@ -213,6 +213,63 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
             args.lastupdate,
             args.offset
           );
+
+          // Map measure type IDs to descriptions
+          const measureTypeMap: Record<number, string> = {
+            1: "Weight (kg)",
+            4: "Height (meter)",
+            5: "Fat Free Mass (kg)",
+            6: "Fat Ratio (%)",
+            8: "Fat Mass Weight (kg)",
+            9: "Diastolic Blood Pressure (mmHg)",
+            10: "Systolic Blood Pressure (mmHg)",
+            11: "Heart Pulse (bpm) - only for BPM and scale devices",
+            12: "Temperature (celsius)",
+            54: "SP02 (%)",
+            71: "Body Temperature (celsius)",
+            73: "Skin Temperature (celsius)",
+            76: "Muscle Mass (kg)",
+            77: "Hydration (kg)",
+            88: "Bone Mass (kg)",
+            91: "Pulse Wave Velocity (m/s)",
+            123: "VO2 max is a numerical measurement of your body's ability to consume oxygen (ml/min/kg)",
+            130: "Atrial fibrillation result",
+            135: "QRS interval duration based on ECG signal",
+            136: "PR interval duration based on ECG signal",
+            137: "QT interval duration based on ECG signal",
+            138: "Corrected QT interval duration based on ECG signal",
+            139: "Atrial fibrillation result from PPG",
+            155: "Vascular age",
+            167: "Nerve Health Score Conductance 2 electrodes Feet",
+            168: "Extracellular Water in kg",
+            169: "Intracellular Water in kg",
+            170: "Visceral Fat (without unity)",
+            173: "Fat Free Mass for segments",
+            174: "Fat Mass for segments in mass unit",
+            175: "Muscle Mass for segments",
+            196: "Electrodermal activity feet",
+            226: "Basal Metabolic Rate (BMR)",
+            227: "Metabolic Age",
+            229: "Electrochemical Skin Conductance (ESC)",
+          };
+
+          // Add type descriptions and calculated values to each measure
+          if (measures?.measuregrps) {
+            measures.measuregrps = measures.measuregrps.map((grp: any) => {
+              if (grp.measures) {
+                grp.measures = grp.measures.map((measure: any) => {
+                  const calculatedValue = measure.value * Math.pow(10, measure.unit);
+                  return {
+                    ...measure,
+                    type_description: measureTypeMap[measure.type] || `Unknown type ${measure.type}`,
+                    calculated_value: calculatedValue,
+                  };
+                });
+              }
+              return grp;
+            });
+          }
+
           return {
             content: [
               {
@@ -474,8 +531,8 @@ app.post(mcpEndpoint, authenticateBearer, async (c) => {
           {
             description: "Get health measures including weight, height, body composition, blood pressure, heart rate, temperature, and more. Supports single or multiple measure types.",
             inputSchema: {
-              meastype: z.number().optional().describe("Single measure type ID. Available types: 1=Weight(kg), 4=Height(m), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic BP(mmHg), 10=Systolic BP(mmHg), 11=Heart Pulse(bpm), 12=Temperature(°C), 54=SpO2(%), 71=Body Temperature(°C), 73=Skin Temperature(°C), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval(ECG), 136=PR interval(ECG), 137=QT interval(ECG), 138=Corrected QT interval(ECG), 139=Atrial fibrillation(PPG), 155=Vascular age, 167=Nerve Health Score, 168=Extracellular Water(kg), 169=Intracellular Water(kg), 170=Visceral Fat, 173=Fat Free Mass for segments, 174=Fat Mass for segments, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
-              meastypes: z.string().optional().describe("Comma-separated list of measure type IDs (e.g., '1,9,10' for weight and blood pressure). Available types: 1=Weight(kg), 4=Height(m), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic BP(mmHg), 10=Systolic BP(mmHg), 11=Heart Pulse(bpm), 12=Temperature(°C), 54=SpO2(%), 71=Body Temperature(°C), 73=Skin Temperature(°C), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval(ECG), 136=PR interval(ECG), 137=QT interval(ECG), 138=Corrected QT interval(ECG), 139=Atrial fibrillation(PPG), 155=Vascular age, 167=Nerve Health Score, 168=Extracellular Water(kg), 169=Intracellular Water(kg), 170=Visceral Fat, 173=Fat Free Mass for segments, 174=Fat Mass for segments, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
+              meastype: z.number().optional().describe("Single measure type ID. Available types: 1=Weight(kg), 4=Height(meter), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic Blood Pressure(mmHg), 10=Systolic Blood Pressure(mmHg), 11=Heart Pulse(bpm)-only for BPM and scale devices, 12=Temperature(celsius), 54=SP02(%), 71=Body Temperature(celsius), 73=Skin Temperature(celsius), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max is a numerical measurement of your body's ability to consume oxygen(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval duration based on ECG signal, 136=PR interval duration based on ECG signal, 137=QT interval duration based on ECG signal, 138=Corrected QT interval duration based on ECG signal, 139=Atrial fibrillation result from PPG, 155=Vascular age, 167=Nerve Health Score Conductance 2 electrodes Feet, 168=Extracellular Water in kg, 169=Intracellular Water in kg, 170=Visceral Fat(without unity), 173=Fat Free Mass for segments, 174=Fat Mass for segments in mass unit, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
+              meastypes: z.string().optional().describe("Comma-separated list of measure type IDs (e.g., '1,9,10' for weight and blood pressure). Available types: 1=Weight(kg), 4=Height(meter), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic Blood Pressure(mmHg), 10=Systolic Blood Pressure(mmHg), 11=Heart Pulse(bpm)-only for BPM and scale devices, 12=Temperature(celsius), 54=SP02(%), 71=Body Temperature(celsius), 73=Skin Temperature(celsius), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max is a numerical measurement of your body's ability to consume oxygen(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval duration based on ECG signal, 136=PR interval duration based on ECG signal, 137=QT interval duration based on ECG signal, 138=Corrected QT interval duration based on ECG signal, 139=Atrial fibrillation result from PPG, 155=Vascular age, 167=Nerve Health Score Conductance 2 electrodes Feet, 168=Extracellular Water in kg, 169=Intracellular Water in kg, 170=Visceral Fat(without unity), 173=Fat Free Mass for segments, 174=Fat Mass for segments in mass unit, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)"),
               startdate: z.number().optional().describe("Start date as Unix timestamp"),
               enddate: z.number().optional().describe("End date as Unix timestamp"),
               lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated/created after this date. Use for synchronization instead of startdate/enddate"),
@@ -494,6 +551,63 @@ app.post(mcpEndpoint, authenticateBearer, async (c) => {
                 args.lastupdate,
                 args.offset
               );
+
+              // Map measure type IDs to descriptions
+              const measureTypeMap: Record<number, string> = {
+                1: "Weight (kg)",
+                4: "Height (meter)",
+                5: "Fat Free Mass (kg)",
+                6: "Fat Ratio (%)",
+                8: "Fat Mass Weight (kg)",
+                9: "Diastolic Blood Pressure (mmHg)",
+                10: "Systolic Blood Pressure (mmHg)",
+                11: "Heart Pulse (bpm) - only for BPM and scale devices",
+                12: "Temperature (celsius)",
+                54: "SP02 (%)",
+                71: "Body Temperature (celsius)",
+                73: "Skin Temperature (celsius)",
+                76: "Muscle Mass (kg)",
+                77: "Hydration (kg)",
+                88: "Bone Mass (kg)",
+                91: "Pulse Wave Velocity (m/s)",
+                123: "VO2 max is a numerical measurement of your body's ability to consume oxygen (ml/min/kg)",
+                130: "Atrial fibrillation result",
+                135: "QRS interval duration based on ECG signal",
+                136: "PR interval duration based on ECG signal",
+                137: "QT interval duration based on ECG signal",
+                138: "Corrected QT interval duration based on ECG signal",
+                139: "Atrial fibrillation result from PPG",
+                155: "Vascular age",
+                167: "Nerve Health Score Conductance 2 electrodes Feet",
+                168: "Extracellular Water in kg",
+                169: "Intracellular Water in kg",
+                170: "Visceral Fat (without unity)",
+                173: "Fat Free Mass for segments",
+                174: "Fat Mass for segments in mass unit",
+                175: "Muscle Mass for segments",
+                196: "Electrodermal activity feet",
+                226: "Basal Metabolic Rate (BMR)",
+                227: "Metabolic Age",
+                229: "Electrochemical Skin Conductance (ESC)",
+              };
+
+              // Add type descriptions and calculated values to each measure
+              if (measures?.measuregrps) {
+                measures.measuregrps = measures.measuregrps.map((grp: any) => {
+                  if (grp.measures) {
+                    grp.measures = grp.measures.map((measure: any) => {
+                      const calculatedValue = measure.value * Math.pow(10, measure.unit);
+                      return {
+                        ...measure,
+                        type_description: measureTypeMap[measure.type] || `Unknown type ${measure.type}`,
+                        calculated_value: calculatedValue,
+                      };
+                    });
+                  }
+                  return grp;
+                });
+              }
+
               return {
                 content: [
                   {
