@@ -241,13 +241,13 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
     sessionServer.registerTool(
       "get_workouts",
       {
-        description: "Get workout summaries including calories burned, heart rate data, distance, steps, elevation, and swimming metrics. Returns aggregated data for each workout session.",
+        description: "Get workout summaries including calories burned, heart rate data, distance, steps, elevation, and swimming metrics. Returns aggregated data for each workout session. By default returns ALL available data fields.",
         inputSchema: {
           startdateymd: z.string().optional().describe("Start date in YYYY-MM-DD format (e.g., '2024-01-15'). Required if lastupdate not provided."),
           enddateymd: z.string().optional().describe("End date in YYYY-MM-DD format (e.g., '2024-01-20'). Required if startdateymd is provided."),
           lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated or created after this date. Use this instead of date range for synchronization."),
           offset: z.number().optional().describe("Pagination offset. Use value from previous response when more=true"),
-          data_fields: z.string().optional().describe("Comma-separated list of data fields to return. Available fields: calories=Active calories(Kcal), intensity=Workout intensity(0-100), manual_distance=User-entered distance(m), manual_calories=User-entered calories(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec), pause_duration=User pause time(sec), algo_pause_duration=Device-detected pause time(sec), spo2_average=Average SpO2(%), steps=Step count, distance=Distance(m), elevation=Floors climbed, pool_laps=Pool lap count, strokes=Stroke count, pool_length=Pool length(m). If not specified, all fields are returned."),
+          data_fields: z.string().optional().default("calories,intensity,manual_distance,manual_calories,hr_average,hr_min,hr_max,hr_zone_0,hr_zone_1,hr_zone_2,hr_zone_3,pause_duration,algo_pause_duration,spo2_average,steps,distance,elevation,pool_laps,strokes,pool_length").describe("Comma-separated list of data fields to return. Available fields: calories=Active calories(Kcal), intensity=Workout intensity(0-100), manual_distance=User-entered distance(m), manual_calories=User-entered calories(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec), pause_duration=User pause time(sec), algo_pause_duration=Device-detected pause time(sec), spo2_average=Average SpO2(%), steps=Step count, distance=Distance(m), elevation=Floors climbed, pool_laps=Pool lap count, strokes=Stroke count, pool_length=Pool length(m). Defaults to all fields."),
         },
       },
       async (args: any) => {
@@ -515,13 +515,13 @@ app.post(mcpEndpoint, authenticateBearer, async (c) => {
         sessionServer.registerTool(
           "get_workouts",
           {
-            description: "Get workout summaries including calories burned, heart rate data, distance, steps, elevation, and swimming metrics. Returns aggregated data for each workout session.",
+            description: "Get workout summaries including calories burned, heart rate data, distance, steps, elevation, and swimming metrics. Returns aggregated data for each workout session. By default returns ALL available data fields.",
             inputSchema: {
               startdateymd: z.string().optional().describe("Start date in YYYY-MM-DD format (e.g., '2024-01-15'). Required if lastupdate not provided."),
               enddateymd: z.string().optional().describe("End date in YYYY-MM-DD format (e.g., '2024-01-20'). Required if startdateymd is provided."),
               lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated or created after this date. Use this instead of date range for synchronization."),
               offset: z.number().optional().describe("Pagination offset. Use value from previous response when more=true"),
-              data_fields: z.string().optional().describe("Comma-separated list of data fields to return. Available fields: calories=Active calories(Kcal), intensity=Workout intensity(0-100), manual_distance=User-entered distance(m), manual_calories=User-entered calories(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec), pause_duration=User pause time(sec), algo_pause_duration=Device-detected pause time(sec), spo2_average=Average SpO2(%), steps=Step count, distance=Distance(m), elevation=Floors climbed, pool_laps=Pool lap count, strokes=Stroke count, pool_length=Pool length(m). If not specified, all fields are returned."),
+              data_fields: z.string().optional().default("calories,intensity,manual_distance,manual_calories,hr_average,hr_min,hr_max,hr_zone_0,hr_zone_1,hr_zone_2,hr_zone_3,pause_duration,algo_pause_duration,spo2_average,steps,distance,elevation,pool_laps,strokes,pool_length").describe("Comma-separated list of data fields to return. Available fields: calories=Active calories(Kcal), intensity=Workout intensity(0-100), manual_distance=User-entered distance(m), manual_calories=User-entered calories(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec), pause_duration=User pause time(sec), algo_pause_duration=Device-detected pause time(sec), spo2_average=Average SpO2(%), steps=Step count, distance=Distance(m), elevation=Floors climbed, pool_laps=Pool lap count, strokes=Stroke count, pool_length=Pool length(m). Defaults to all fields."),
             },
           },
           async (args: any) => {
