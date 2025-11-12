@@ -95,22 +95,41 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
 
   console.log("Setting response headers with session ID:", sessionId);
 
-  // Set the session ID header
-  c.header("Mcp-Session-Id", sessionId);
-  c.header("Cache-Control", "no-cache");
-  c.header("X-Accel-Buffering", "no");
+  // Create a ReadableStream for SSE
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+  const encoder = new TextEncoder();
 
-  return streamSSE(c, async (stream) => {
-    console.log("SSE stream started for session:", sessionId);
+  // Helper to write SSE events
+  const writeSSE = async (data: string, event?: string) => {
+    try {
+      if (event) {
+        await writer.write(encoder.encode(`event: ${event}\n`));
+      }
+      await writer.write(encoder.encode(`data: ${data}\n\n`));
+    } catch (error) {
+      console.error("Error writing SSE:", error);
+    }
+  };
 
-    // Create transport
-    const transport = new HonoSSETransport();
-    transport.attachStream(stream);
+  // Create transport
+  const transport = new HonoSSETransport();
+  transport.attachStream({
+    writeSSE: async (data: { data: string; event?: string; id?: string }) => {
+      await writeSSE(data.data, data.event);
+    },
+    close: () => {
+      writer.close();
+    },
+  });
 
-    console.log("Transport created and stream attached");
+  console.log("Transport created and stream attached");
 
-    // Create new MCP server instance for this session
-    const sessionServer = new McpServer(
+  // Start async initialization
+  (async () => {
+    try {
+      // Create new MCP server instance for this session
+      const sessionServer = new McpServer(
       {
         name: "withings-mcp",
         version: "1.0.0",
@@ -187,10 +206,7 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
       // Keep connection alive - send heartbeat
       const heartbeat = setInterval(async () => {
         try {
-          await stream.writeSSE({
-            data: "",
-            event: "ping",
-          });
+          await writeSSE("", "ping");
         } catch (error) {
           clearInterval(heartbeat);
         }
@@ -199,13 +215,29 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
       // Cleanup on abort
       c.req.raw.signal.addEventListener("abort", () => {
         clearInterval(heartbeat);
+        sessionManager.deleteSession(sessionId);
       });
 
+      } catch (error) {
+        console.error("Failed to establish MCP connection:", error);
+        sessionManager.deleteSession(sessionId);
+        writer.close();
+      }
     } catch (error) {
-      console.error("Failed to establish MCP connection:", error);
-      sessionManager.deleteSession(sessionId);
-      throw error;
+      console.error("Failed to setup MCP server:", error);
+      writer.close();
     }
+  })();  // End of async IIFE
+
+  // Return SSE response with proper headers immediately
+  return new Response(readable, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      "X-Accel-Buffering": "no",
+      "Mcp-Session-Id": sessionId,
+    },
   });
 });
 
