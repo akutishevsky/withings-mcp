@@ -230,28 +230,35 @@ app.get(mcpEndpoint, authenticateBearer, async (c) => {
   })();  // End of async IIFE
 
   // Return SSE response with proper headers immediately
-  return new Response(readable, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
-      "X-Accel-Buffering": "no",
-      "Mcp-Session-Id": sessionId,
-    },
-  });
+  const headers = {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "X-Accel-Buffering": "no",
+    "Mcp-Session-Id": sessionId,
+  };
+
+  console.log("Creating SSE response with headers:", headers);
+
+  const response = new Response(readable, { headers });
+
+  console.log("Response created, header check - Mcp-Session-Id:", response.headers.get("Mcp-Session-Id"));
+
+  return response;
 });
 
 // POST - Receive JSON-RPC messages from client
 app.post(mcpEndpoint, authenticateBearer, async (c) => {
   const sessionId = c.req.header("Mcp-Session-Id");
+  const mcpToken = (c as any).get("accessToken") as string;
 
-  console.log("POST message received for session:", sessionId);
+  console.log("POST message received for session:", sessionId, "token:", mcpToken?.substring(0, 10));
 
   if (!sessionId) {
-    console.error("POST request missing session ID");
+    console.log("POST request without session ID - client hasn't established SSE yet, returning 400");
     return c.json({
       error: "invalid_request",
-      error_description: "Mcp-Session-Id header required"
+      error_description: "Mcp-Session-Id header required. Please establish SSE connection first (GET /mcp)"
     }, 400);
   }
 
