@@ -1,6 +1,12 @@
 # Withings MCP Server
 
-MCP server for integrating Withings health data with Claude.
+MCP server for integrating Withings health data with Claude. This server uses OAuth 2.0 for secure authentication with Withings API and can be deployed to Deno Deploy.
+
+## Prerequisites
+
+1. Create a Withings developer account at https://developer.withings.com/
+2. Create an application to get your client ID and secret
+3. Note your redirect URI (this will be your deployed URL + `/auth/callback`)
 
 ## Setup
 
@@ -14,28 +20,65 @@ npm install
 npm run build
 ```
 
-3. Configure your Withings API credentials (see Configuration section below)
+3. Set environment variables:
+```bash
+export WITHINGS_CLIENT_ID="your_client_id"
+export WITHINGS_CLIENT_SECRET="your_client_secret"
+export WITHINGS_REDIRECT_URI="https://your-app.deno.dev/auth/callback"
+export PORT=3000
+```
 
-## Configuration
+## Deployment to Deno Deploy
 
-This server requires a Withings API access token. You'll need to:
+1. Build the project:
+```bash
+npm run build
+```
 
-1. Create a Withings developer account at https://developer.withings.com/
-2. Create an application to get your client ID and secret
-3. Obtain an access token through OAuth flow
-4. Set the `WITHINGS_ACCESS_TOKEN` environment variable
+2. Deploy to production:
+```bash
+deno deploy --prod
+```
 
-## Usage
+3. Set environment variables:
+```bash
+deno deploy env add WITHINGS_CLIENT_ID "your_client_id"
+deno deploy env add WITHINGS_CLIENT_SECRET "your_client_secret"
+deno deploy env add WITHINGS_REDIRECT_URI "https://your-app.deno.dev/auth/callback"
+```
 
-Run the server:
+4. Update your Withings app settings with the callback URL from Deno Deploy
+
+## OAuth Flow
+
+1. Users navigate to `https://your-app.deno.dev/auth/authorize`
+2. They are redirected to Withings to authorize
+3. After authorization, they are redirected back with an MCP token
+4. This token is used to authenticate MCP tool calls
+
+## MCP Connection
+
+Configure Claude to connect to your server:
+
+```json
+{
+  "mcpServers": {
+    "withings": {
+      "url": "https://your-app.deno.dev/sse",
+      "transport": "sse"
+    }
+  }
+}
+```
+
+## Local Development
+
+Run the server locally:
 ```bash
 npm start
 ```
 
-Or for development with auto-rebuild:
-```bash
-npm run dev
-```
+The server will be available at `http://localhost:3000`
 
 ## Available Tools
 
