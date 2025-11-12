@@ -1,0 +1,12 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-net --allow-env --allow-read --allow-write build/index.js"
+  },
+  "deploy": {
+    "project": "withings-mcp",
+    "entrypoint": "build/index.js",
+    "include": [
+      "build/"
+    ]
+  }
+}
