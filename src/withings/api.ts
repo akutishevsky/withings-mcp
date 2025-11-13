@@ -62,7 +62,28 @@ export async function makeWithingsRequest(
 }
 
 /**
- * Get sleep summary data
+ * Get high-frequency sleep data with timestamps
+ */
+export async function getSleep(
+  mcpToken: string,
+  startDate: number,
+  endDate: number,
+  dataFields?: string
+): Promise<any> {
+  const params: Record<string, any> = {
+    startdate: startDate,
+    enddate: endDate,
+  };
+
+  if (dataFields) {
+    params.data_fields = dataFields;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/v2/sleep", "get", params);
+}
+
+/**
+ * Get sleep summary data (aggregated metrics)
  */
 export async function getSleepSummary(
   mcpToken: string,
