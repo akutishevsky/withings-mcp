@@ -1,5 +1,8 @@
 import { z } from "zod";
 import { getSleepSummary } from "../withings/api.js";
+import { createLogger } from "../utils/logger.js";
+
+const logger = createLogger({ component: "tools:sleep" });
 
 export function registerSleepTools(server: any, mcpAccessToken: string) {
   server.registerTool(
@@ -14,6 +17,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
+      logger.info("Tool invoked: get_sleep_summary");
       try {
         const sleepData = await getSleepSummary(
           mcpAccessToken,
@@ -31,6 +35,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
           ],
         };
       } catch (error) {
+        logger.error("Tool error: get_sleep_summary");
         return {
           content: [
             {

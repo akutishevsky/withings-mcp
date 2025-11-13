@@ -1,5 +1,8 @@
 import { z } from "zod";
 import { getMeasures, getWorkouts } from "../withings/api.js";
+import { createLogger } from "../utils/logger.js";
+
+const logger = createLogger({ component: "tools:measure" });
 
 // Map of measure type IDs to descriptions
 const MEASURE_TYPE_MAP: Record<number, string> = {
@@ -58,6 +61,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
+      logger.info("Tool invoked: get_measures");
       try {
         const measures = await getMeasures(
           mcpAccessToken,
@@ -95,6 +99,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           ],
         };
       } catch (error) {
+        logger.error("Tool error: get_measures");
         return {
           content: [
             {
@@ -122,6 +127,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
+      logger.info("Tool invoked: get_workouts");
       try {
         const workouts = await getWorkouts(
           mcpAccessToken,
@@ -149,6 +155,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           ],
         };
       } catch (error) {
+        logger.error("Tool error: get_workouts");
         return {
           content: [
             {

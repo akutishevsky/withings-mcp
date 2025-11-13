@@ -2,6 +2,9 @@ import { Hono } from "hono";
 import { tokenStore } from "./token-store.js";
 import crypto from "node:crypto";
 import { openKv } from "@deno/kv";
+import { createLogger } from "../utils/logger.js";
+
+const logger = createLogger({ component: "oauth" });
 
 const WITHINGS_AUTH_URL = "https://account.withings.com/oauth2_user/authorize2";
 const WITHINGS_TOKEN_URL = "https://wbsapi.withings.net/v2/oauth2";
@@ -114,6 +117,8 @@ export function createOAuthRouter(config: OAuthConfig) {
       redirectUris: body.redirect_uris || [],
     });
 
+    logger.info("OAuth client registered");
+
     return c.json({
       client_id: clientId,
       redirect_uris: body.redirect_uris || [],
@@ -130,12 +135,16 @@ export function createOAuthRouter(config: OAuthConfig) {
     const codeChallengeMethod = c.req.query("code_challenge_method");
 
     if (responseType !== "code") {
+      logger.warn("OAuth authorization failed: unsupported response type");
       return c.json({ error: "unsupported_response_type" }, 400);
     }
 
     if (!redirectUri) {
+      logger.warn("OAuth authorization failed: missing redirect_uri");
       return c.json({ error: "invalid_request", error_description: "redirect_uri is required" }, 400);
     }
+
+    logger.info("Starting OAuth authorization flow");
 
     // Generate internal state for Withings OAuth
     const internalState = crypto.randomUUID();
@@ -166,13 +175,17 @@ export function createOAuthRouter(config: OAuthConfig) {
     const internalState = c.req.query("state");
 
     if (!code || !internalState) {
+      logger.warn("OAuth callback failed: missing code or state");
       return c.json({ error: "invalid_request" }, 400);
     }
 
     const session = await oauthStore.getSession(internalState);
     if (!session) {
+      logger.warn("OAuth callback failed: invalid or expired state");
       return c.json({ error: "invalid_state" }, 400);
     }
+
+    logger.info("Processing OAuth callback from Withings");
 
     // Generate authorization code for MCP client
     const authCode = crypto.randomUUID();
@@ -207,22 +220,28 @@ export function createOAuthRouter(config: OAuthConfig) {
     const codeVerifier = body.code_verifier as string;
 
     if (grantType !== "authorization_code") {
+      logger.warn("Token exchange failed: unsupported grant type");
       return c.json({ error: "unsupported_grant_type" }, 400);
     }
 
     const authCodeData = await oauthStore.getAuthCode(code);
     if (!authCodeData) {
+      logger.warn("Token exchange failed: invalid authorization code");
       return c.json({ error: "invalid_grant" }, 400);
     }
+
+    logger.info("Processing token exchange request");
 
     // Validate PKCE if code_challenge was provided
     if (authCodeData.codeChallenge) {
       if (!codeVerifier) {
+        logger.warn("PKCE validation failed: missing code_verifier");
         return c.json({ error: "invalid_request", error_description: "code_verifier required" }, 400);
       }
 
       const hash = base64URLEncode(sha256(codeVerifier));
       if (hash !== authCodeData.codeChallenge) {
+        logger.warn("PKCE validation failed: invalid code_verifier");
         return c.json({ error: "invalid_grant", error_description: "invalid code_verifier" }, 400);
       }
     }
@@ -247,6 +266,7 @@ export function createOAuthRouter(config: OAuthConfig) {
       const tokenData = await tokenResponse.json();
 
       if (tokenData.status !== 0) {
+        logger.error("Withings token exchange failed");
         return c.json({ error: "server_error", error_description: "Failed to exchange Withings token" }, 500);
       }
 
@@ -264,12 +284,15 @@ export function createOAuthRouter(config: OAuthConfig) {
       // Clean up auth code
       await oauthStore.deleteAuthCode(code);
 
+      logger.info("Token exchange completed successfully");
+
       return c.json({
         access_token: mcpToken,
         token_type: "Bearer",
         expires_in: tokenData.body.expires_in,
       });
     } catch (error) {
+      logger.error("Token exchange error");
       return c.json({ error: "server_error", error_description: String(error) }, 500);
     }
   });

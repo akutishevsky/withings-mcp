@@ -48,8 +48,41 @@ src/
 │   └── mcp-transport.ts     # Custom SSE transport for MCP SDK
 ├── withings/                # Withings API Integration
 │   └── api.ts               # Withings API client & request handling
+├── utils/                    # Utilities
+│   └── logger.ts            # Privacy-safe Pino logger configuration
 └── index.ts                 # Main entry point (initializes stores & creates app)
 ```
+
+### Logging
+
+The server uses **Pino** for structured logging with strict privacy controls suitable for public repositories:
+
+**Privacy-Safe Configuration** (src/utils/logger.ts):
+- **NO** tokens, access codes, or authentication credentials
+- **NO** user IDs, email addresses, or personal information
+- **NO** API request/response payloads containing sensitive data
+- **ONLY** operational events, errors, and minimal diagnostic information
+
+**Log Levels:**
+- `error`: Critical failures requiring attention
+- `warn`: Non-critical issues or deprecations
+- `info`: Important operational events (connections, disconnections)
+- `debug`: Detailed diagnostic information (disabled in production)
+
+**Redacted Fields:**
+All sensitive fields are automatically redacted including: `token`, `access_token`, `code`, `client_secret`, `code_verifier`, `userid`, `email`, `password`, `sessionId`, `state`, and more.
+
+**Environment Variables:**
+- `LOG_LEVEL`: Set log level (default: `info`) - supports trace, debug, info, warn, error
+
+**Component Loggers:**
+Each module creates a child logger with context:
+- `component: "oauth"` - Authentication flow events
+- `component: "middleware"` - Request authentication
+- `component: "mcp-endpoints"` - MCP session lifecycle
+- `component: "tools:measure"` - Measure tool invocations
+- `component: "tools:sleep"` - Sleep tool invocations
+- `component: "transport"` - Transport and session management
 
 ### OAuth 2.0 Flow Architecture
 
@@ -105,6 +138,7 @@ Required:
 
 Optional:
 - `PORT`: Server port (default: 3000)
+- `LOG_LEVEL`: Logging level - trace, debug, info, warn, error (default: info)
 
 See `.env.example` for template.
 

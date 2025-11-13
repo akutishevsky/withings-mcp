@@ -2,6 +2,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 import { HonoSSETransport, sessionManager } from "../transport/mcp-transport.js";
 import { registerAllTools } from "../tools/index.js";
+import { createLogger } from "../utils/logger.js";
+
+const logger = createLogger({ component: "mcp-endpoints" });
 
 /**
  * GET handler for /mcp endpoint - Initiates SSE stream for MCP
@@ -16,6 +19,7 @@ export const handleMcpGet = async (c: any) => {
   // Check for existing session
   const existingSession = sessionManager.getSession(sessionId);
   if (existingSession) {
+    logger.info("Closing existing MCP session to establish new connection");
     // Close existing transport if any
     await existingSession.transport.close();
     sessionManager.deleteSession(sessionId);
@@ -74,9 +78,11 @@ export const handleMcpGet = async (c: any) => {
 
         // Store session
         sessionManager.createSession(sessionId, transport);
+        logger.info("MCP session established via GET");
 
         // Handle connection close
         c.req.raw.signal.addEventListener("abort", () => {
+          logger.info("MCP connection closed by client");
           sessionManager.deleteSession(sessionId);
         });
 
@@ -96,10 +102,12 @@ export const handleMcpGet = async (c: any) => {
         });
 
       } catch (error) {
+        logger.error("Failed to connect MCP server to transport");
         sessionManager.deleteSession(sessionId);
         writer.close();
       }
     } catch (error) {
+      logger.error("Failed to initialize MCP session");
       writer.close();
     }
   })();
@@ -183,12 +191,14 @@ export const handleMcpPost = async (c: any) => {
 
         // Store session
         sessionManager.createSession(sessionId!, transport);
+        logger.info("MCP session established via POST");
 
         // Handle the initial message
         await transport.handleIncomingMessage(message);
 
         // Handle connection close
         c.req.raw.signal.addEventListener("abort", () => {
+          logger.info("MCP connection closed by client");
           sessionManager.deleteSession(sessionId!);
         });
 
@@ -208,6 +218,7 @@ export const handleMcpPost = async (c: any) => {
         });
 
       } catch (error) {
+        logger.error("Failed to initialize MCP session via POST");
         sessionManager.deleteSession(sessionId!);
         writer.close();
       }
@@ -228,6 +239,7 @@ export const handleMcpPost = async (c: any) => {
   // Existing session - handle message and return 202
   const session = sessionManager.getSession(sessionId);
   if (!session) {
+    logger.warn("Message received for invalid or expired session");
     return c.json({
       error: "invalid_session",
       error_description: "Session not found or expired"
@@ -243,6 +255,7 @@ export const handleMcpPost = async (c: any) => {
     // Return 202 Accepted (response will come via SSE)
     return c.body(null, 202);
   } catch (error) {
+    logger.error("Failed to process incoming MCP message");
     return c.json({
       error: "internal_error",
       error_description: "Failed to process message"

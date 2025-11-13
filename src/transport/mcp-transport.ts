@@ -1,5 +1,8 @@
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
+import { createLogger } from "../utils/logger.js";
+
+const logger = createLogger({ component: "transport" });
 
 export interface SSEStream {
   writeSSE: (data: { data: string; event?: string; id?: string }) => Promise<void>;
@@ -68,6 +71,7 @@ export class HonoSSETransport implements Transport {
     }
 
     this._closed = true;
+    logger.info("Transport closed");
 
     if (this.stream) {
       this.stream.close();
@@ -146,10 +150,15 @@ class SessionManager {
 
   cleanup(): void {
     const now = Date.now();
+    let cleanedCount = 0;
     for (const [sessionId, session] of this.sessions.entries()) {
       if (now - session.lastActivity > this.SESSION_TIMEOUT) {
         this.deleteSession(sessionId);
+        cleanedCount++;
       }
+    }
+    if (cleanedCount > 0) {
+      logger.info(`Cleaned up ${cleanedCount} expired session(s)`);
     }
   }
 

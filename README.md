@@ -26,6 +26,7 @@ export WITHINGS_CLIENT_ID="your_client_id"
 export WITHINGS_CLIENT_SECRET="your_client_secret"
 export WITHINGS_REDIRECT_URI="https://your-app.deno.dev/auth/callback"
 export PORT=3000
+export LOG_LEVEL=info  # Optional: trace, debug, info, warn, error
 ```
 
 ## Deployment to Deno Deploy
@@ -94,7 +95,44 @@ The server will be available at `http://localhost:3000`
 
 ## Available Tools
 
-(Tools will be added as the server is developed)
+### get_sleep_summary
+Retrieves sleep summary data including sleep duration, sleep stages (light, deep, REM), heart rate metrics, breathing quality, and sleep score.
+
+**Parameters:**
+- `startdateymd`: Start date (YYYY-MM-DD format)
+- `enddateymd`: End date (YYYY-MM-DD format)
+- `lastupdate`: Unix timestamp for synchronization
+- `data_fields`: Optional comma-separated list of specific fields
+
+### get_measures
+Retrieves health measures with automatic type descriptions and calculated values including weight, body composition, blood pressure, heart rate, temperature, and advanced metrics (VO2 max, vascular age, metabolic age, BMR).
+
+**Parameters:**
+- `meastype`: Single measure type ID
+- `meastypes`: Comma-separated list of measure type IDs
+- `startdate`/`enddate`: Unix timestamps for date range
+- `lastupdate`: Unix timestamp for synchronization
+- `offset`: Pagination offset
+
+### get_workouts
+Retrieves workout summaries with comprehensive metrics including calories burned, workout intensity, heart rate data, distance, steps, elevation, and swimming metrics.
+
+**Parameters:**
+- `startdateymd`: Start date (YYYY-MM-DD format)
+- `enddateymd`: End date (YYYY-MM-DD format)
+- `lastupdate`: Unix timestamp for synchronization
+- `offset`: Pagination offset
+- `data_fields`: Comma-separated list of fields (defaults to all fields)
+
+## Logging
+
+This server uses Pino for structured logging with strict privacy controls:
+- **No sensitive data logged**: All tokens, credentials, user IDs, and personal information are automatically redacted
+- **Production ready**: Suitable for public repositories with privacy-first design
+- **Configurable**: Set `LOG_LEVEL` environment variable (trace, debug, info, warn, error)
+- **Pretty printing**: Enabled by default for better readability
+
+All logging is minimal and focused on operational events and debugging, never exposing confidential or user-related information.
 
 ## License
 
