@@ -150,9 +150,11 @@ See `.env.example` for template.
 
 ## MCP Tools
 
-The server implements three MCP tools for accessing Withings health data, organized by Withings API category. All tools are registered via `registerAllTools()` (src/tools/index.ts) on per-session `McpServer` instances to ensure proper session isolation.
+The server implements 11 MCP tools for accessing Withings health data, organized by Withings API category. All tools are registered via `registerAllTools()` (src/tools/index.ts) on per-session `McpServer` instances to ensure proper session isolation.
 
-### get_sleep_summary (src/tools/sleep.ts)
+### Sleep Tools (src/tools/sleep.ts)
+
+#### get_sleep_summary
 
 Retrieves sleep summary data including:
 - Sleep duration and stages (light, deep, REM)
@@ -166,7 +168,9 @@ Retrieves sleep summary data including:
 - `lastupdate`: Unix timestamp for sync (alternative to date range)
 - `data_fields`: Optional comma-separated list of specific fields
 
-### get_measures (src/tools/measure.ts)
+### Measure Tools (src/tools/measure.ts)
+
+#### get_measures
 
 Retrieves health measures with automatic type descriptions and calculated values:
 - Weight, height, body composition (fat mass, muscle mass, bone mass)
@@ -186,7 +190,7 @@ Retrieves health measures with automatic type descriptions and calculated values
 
 **Response enhancement:** Each measure includes `type_description` and `calculated_value` fields added by the server.
 
-### get_workouts (src/tools/measure.ts)
+#### get_workouts
 
 Retrieves workout summaries with comprehensive metrics:
 - Calories burned and workout intensity
@@ -204,20 +208,140 @@ Retrieves workout summaries with comprehensive metrics:
 
 **Response transformation:** The `category` field is removed from workout series.
 
+#### get_activity
+
+Retrieves daily aggregated activity data including:
+- Steps, distance, elevation (floors climbed)
+- Activity durations (soft, moderate, intense)
+- Calories (active and total)
+- Heart rate metrics (average, min, max, zones)
+
+**Parameters:**
+- `startdateymd`: Start date (YYYY-MM-DD format)
+- `enddateymd`: End date (YYYY-MM-DD format)
+- `lastupdate`: Unix timestamp for sync (alternative to date range)
+- `offset`: Pagination offset
+- `data_fields`: Optional comma-separated list of specific fields
+
+#### get_intraday_activity
+
+Retrieves high-frequency intraday activity data captured throughout the day:
+- Time-series data with timestamps
+- Steps, elevation, calories, distance
+- Swimming metrics (strokes, pool laps, duration)
+- Heart rate and SpO2 measurements
+- HRV metrics (RMSSD, SDNN1, quality score)
+
+**Parameters:**
+- `startdate`: Unix timestamp (optional)
+- `enddate`: Unix timestamp (optional, max 24h from startdate)
+- `data_fields`: Optional comma-separated list of specific fields
+
+**Note:** If no dates provided, returns most recent data. Maximum 24-hour range.
+
+### User Tools (src/tools/user.ts)
+
+#### get_user_devices
+
+Retrieves list of devices linked to the user's account:
+- Device type and model (e.g., "Scale", "Body Cardio")
+- Battery level
+- MAC address and device ID
+- Firmware version
+- Network status and connectivity
+- Timezone
+- First and last session dates
+
+**Parameters:** None required
+
+#### get_user_goals
+
+Retrieves the user's health and fitness goals:
+- Steps: Daily step count target
+- Sleep: Daily sleep duration target (in seconds)
+- Weight: Target weight (with value and unit)
+
+**Parameters:** None required
+
+### Heart Tools (src/tools/heart.ts)
+
+#### list_heart_records
+
+Retrieves list of ECG (electrocardiogram) recordings:
+- Signal IDs (for fetching full waveform data)
+- Timestamps
+- Heart rate measurements
+- Afib (atrial fibrillation) detection results
+- Blood pressure measurements (if taken with BPM Core)
+
+**Parameters:**
+- `startdate`: Unix timestamp (optional)
+- `enddate`: Unix timestamp (optional)
+- `offset`: Pagination offset (optional)
+
+#### get_heart_signal
+
+Retrieves detailed ECG waveform data in micro-volts (μV):
+- Raw ECG signal data array
+- Sampling frequency (500 Hz for BPM Core, 300 Hz for Move ECG/ScanWatch)
+- Wear position information
+- Recording duration: 20s (BPM Core), 30s (Move ECG/ScanWatch)
+
+**Parameters:**
+- `signalid`: Signal ID from list_heart_records (required)
+- `with_filtered`: Request filtered signal version (optional)
+- `with_intervals`: Include feature intervals (optional)
+
+### Stetho Tools (src/tools/stetho.ts)
+
+#### list_stetho_records
+
+Retrieves list of stethoscope recordings:
+- Signal IDs (for fetching full audio data)
+- Timestamps
+- Device IDs
+- VHD (Valve Heart Disease) indicators
+- Timezone information
+
+**Parameters:**
+- `startdate`: Unix timestamp (optional)
+- `enddate`: Unix timestamp (optional)
+- `offset`: Pagination offset (optional)
+
+#### get_stetho_signal
+
+Retrieves detailed stethoscope audio signal data:
+- Raw audio signal data array
+- Frequency (sampling rate)
+- Duration, format, size, resolution
+- Channel information
+- Device model
+- Stethoscope position
+- VHD (Valve Heart Disease) indicator
+
+**Parameters:**
+- `signalid`: Signal ID from list_stetho_records (required)
+
 ### Adding New Tools
 
 To add new Withings API tools:
 
-1. Create a new file in `src/tools/` based on the Withings API category (e.g., `heart.ts`, `user.ts`)
+1. Create a new file in `src/tools/` based on the Withings API category
 2. Export a `register[Category]Tools()` function that takes `(server, mcpAccessToken)`
 3. Import and call your registration function in `src/tools/index.ts`
 4. Add corresponding API client functions to `src/withings/api.ts`
+5. Add a component logger entry (e.g., `component: "tools:newcategory"`)
 
-Example tool categories available:
-- Heart API (heart rate data)
-- User API (user profile, devices, goals)
-- Activity API (daily activities, intraday data)
+Implemented tool categories:
+- Sleep API (sleep summary data)
+- Measure API (health measures, workouts, activities)
+- User API (devices, goals)
+- Heart API (ECG recordings and signals)
+- Stetho API (stethoscope recordings and signals)
+
+Additional tool categories available in Withings API:
 - Notify API (webhooks/notifications)
+- Survey API (health surveys)
 
 ## Important Implementation Details
 
@@ -255,6 +379,14 @@ Tools are registered using a centralized approach:
 - Sleep: `/v2/sleep` with action `getsummary`
 - Measures: `/measure` with action `getmeas`
 - Workouts: `/v2/measure` with action `getworkouts`
+- Activity: `/v2/measure` with action `getactivity`
+- Intraday Activity: `/v2/measure` with action `getintradayactivity`
+- User Devices: `/v2/user` with action `getdevice`
+- User Goals: `/v2/user` with action `getgoals`
+- Heart List: `/v2/heart` with action `list`
+- Heart Signal: `/v2/heart` with action `get`
+- Stetho List: `/v2/stetho` with action `list`
+- Stetho Signal: `/v2/stetho` with action `get`
 
 **API Client** (src/withings/api.ts):
 - `makeWithingsRequest()`: Generic authenticated request handler
