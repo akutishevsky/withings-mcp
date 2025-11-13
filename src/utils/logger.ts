@@ -1,7 +1,5 @@
-import pino from "pino";
-
 /**
- * Privacy-Safe Logger Configuration
+ * Privacy-Safe Custom Logger
  *
  * This logger is configured for a PUBLIC repository and follows strict privacy guidelines:
  * - NO tokens, access codes, or authentication credentials are logged
@@ -56,23 +54,101 @@ const redactedFields = [
   "secret",
 ];
 
-export const logger = pino({
-  level: process.env.LOG_LEVEL || "info",
+const LOG_LEVELS = {
+  trace: 10,
+  debug: 20,
+  info: 30,
+  warn: 40,
+  error: 50,
+} as const;
 
-  // Redact sensitive fields
-  redact: {
-    paths: redactedFields,
-    censor: "[REDACTED]",
-  },
+type LogLevel = keyof typeof LOG_LEVELS;
 
-  // Use plain JSON output for both development and production
-  // This works with Deno Deploy and is easily parseable
-  formatters: {
-    level: (label) => {
-      return { level: label };
-    },
-  },
-});
+class Logger {
+  private level: number;
+  private context: Record<string, any>;
+
+  constructor(context: Record<string, any> = {}) {
+    const envLevel = (process.env.LOG_LEVEL || "info").toLowerCase() as LogLevel;
+    this.level = LOG_LEVELS[envLevel] || LOG_LEVELS.info;
+    this.context = context;
+  }
+
+  private redact(obj: any): any {
+    if (typeof obj !== "object" || obj === null) {
+      return obj;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map((item) => this.redact(item));
+    }
+
+    const redacted: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (redactedFields.includes(key)) {
+        redacted[key] = "[REDACTED]";
+      } else if (typeof value === "object" && value !== null) {
+        redacted[key] = this.redact(value);
+      } else {
+        redacted[key] = value;
+      }
+    }
+    return redacted;
+  }
+
+  private log(level: LogLevel, message: string, data?: any) {
+    if (LOG_LEVELS[level] < this.level) {
+      return;
+    }
+
+    const logEntry = {
+      level,
+      time: new Date().toISOString(),
+      msg: message,
+      ...this.context,
+      ...(data ? { data: this.redact(data) } : {}),
+    };
+
+    const output = JSON.stringify(logEntry);
+
+    switch (level) {
+      case "error":
+        console.error(output);
+        break;
+      case "warn":
+        console.warn(output);
+        break;
+      default:
+        console.log(output);
+    }
+  }
+
+  trace(message: string, data?: any) {
+    this.log("trace", message, data);
+  }
+
+  debug(message: string, data?: any) {
+    this.log("debug", message, data);
+  }
+
+  info(message: string, data?: any) {
+    this.log("info", message, data);
+  }
+
+  warn(message: string, data?: any) {
+    this.log("warn", message, data);
+  }
+
+  error(message: string, data?: any) {
+    this.log("error", message, data);
+  }
+
+  child(context: Record<string, any>) {
+    return new Logger({ ...this.context, ...context });
+  }
+}
+
+export const logger = new Logger();
 
 /**
  * Create a child logger with additional context
