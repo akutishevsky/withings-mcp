@@ -2,12 +2,12 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { Hono } from "hono";
-import { createOAuthRouter, initOAuthStore } from "./oauth.js";
-import { tokenStore } from "./token-store.js";
+import { createOAuthRouter, initOAuthStore } from "./auth/oauth.js";
+import { tokenStore } from "./auth/token-store.js";
 import { streamSSE } from "hono/streaming";
-import { HonoSSETransport, sessionManager } from "./mcp-transport.js";
+import { HonoSSETransport, sessionManager } from "./transport/mcp-transport.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
-import { getSleepSummary, getMeasures, getWorkouts } from "./withings-api.js";
+import { getSleepSummary, getMeasures, getWorkouts } from "./withings/api.js";
 import { z } from "zod";
 
 // Initialize stores

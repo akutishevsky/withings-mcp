@@ -1,4 +1,4 @@
-import { tokenStore } from "./token-store.js";
+import { tokenStore } from "../auth/token-store.js";
 
 const WITHINGS_API_BASE = "https://wbsapi.withings.net";
 
