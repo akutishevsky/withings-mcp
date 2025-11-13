@@ -61,6 +61,16 @@ export function createApp(config: ServerConfig) {
     });
   });
 
+  // Favicon endpoint
+  app.get("/favicon.ico", async (c) => {
+    try {
+      const file = await Deno.readFile("./public/favicon.ico");
+      return c.body(file, 200, { "Content-Type": "image/x-icon" });
+    } catch {
+      return c.notFound();
+    }
+  });
+
   // Health check endpoint
   app.get("/health", (c) => {
     return c.json({ status: "ok" });
