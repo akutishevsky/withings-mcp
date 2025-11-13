@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { createOAuthRouter } from "../auth/oauth.js";
 import { authenticateBearer } from "./middleware.js";
 import { handleMcpGet, handleMcpPost } from "./mcp-endpoints.js";
@@ -18,6 +19,14 @@ const MCP_ENDPOINT = "/mcp";
  */
 export function createApp(config: ServerConfig) {
   const app = new Hono();
+
+  // Enable CORS for Claude Desktop to connect
+  app.use("*", cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization", "Mcp-Session-Id"],
+    exposeHeaders: ["Mcp-Session-Id"],
+  }));
 
   // Mount OAuth router at root level (per spec)
   app.route("/", createOAuthRouter(config.oauthConfig));
