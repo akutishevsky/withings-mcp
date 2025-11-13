@@ -307,3 +307,43 @@ export async function getHeartSignal(
 
   return await makeWithingsRequest(mcpToken, "/v2/heart", "get", params);
 }
+
+/**
+ * List stethoscope recordings
+ */
+export async function listStethoRecords(
+  mcpToken: string,
+  startDate?: number,
+  endDate?: number,
+  offset?: number
+): Promise<any> {
+  const params: Record<string, any> = {};
+
+  if (startDate !== undefined) {
+    params.startdate = startDate;
+  }
+
+  if (endDate !== undefined) {
+    params.enddate = endDate;
+  }
+
+  if (offset !== undefined) {
+    params.offset = offset;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/v2/stetho", "list", params);
+}
+
+/**
+ * Get detailed stethoscope signal data
+ */
+export async function getStethoSignal(
+  mcpToken: string,
+  signalId: string
+): Promise<any> {
+  const params: Record<string, any> = {
+    signalid: signalId,
+  };
+
+  return await makeWithingsRequest(mcpToken, "/v2/stetho", "get", params);
+}
