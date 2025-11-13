@@ -52,13 +52,13 @@ src/
 ├── withings/                # Withings API Integration
 │   └── api.ts               # Withings API client & request handling
 ├── utils/                    # Utilities
-│   └── logger.ts            # Privacy-safe Pino logger configuration
+│   └── logger.ts            # Privacy-safe custom logger for Deno Deploy
 └── index.ts                 # Main entry point (initializes stores & creates app)
 ```
 
 ### Logging
 
-The server uses **Pino** for structured logging with strict privacy controls suitable for public repositories:
+The server uses a **custom logger** optimized for Deno Deploy with strict privacy controls suitable for public repositories:
 
 **Privacy-Safe Configuration** (src/utils/logger.ts):
 - **NO** tokens, access codes, or authentication credentials
@@ -71,6 +71,12 @@ The server uses **Pino** for structured logging with strict privacy controls sui
 - `warn`: Non-critical issues or deprecations
 - `info`: Important operational events (connections, disconnections)
 - `debug`: Detailed diagnostic information (disabled in production)
+- `trace`: Very detailed diagnostic information
+
+**Log Format:**
+Logs are output in a readable plain-text format: `LEVEL [component] message {optional data}`
+
+Example: `INFO [oauth] Starting OAuth authorization flow`
 
 **Redacted Fields:**
 All sensitive fields are automatically redacted including: `token`, `access_token`, `code`, `client_secret`, `code_verifier`, `userid`, `email`, `password`, `sessionId`, `state`, and more.
