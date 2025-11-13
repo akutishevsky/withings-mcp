@@ -65,13 +65,11 @@ export const logger = pino({
     censor: "[REDACTED]",
   },
 
-  // Pretty print for better readability
-  transport: {
-    target: "pino-pretty",
-    options: {
-      colorize: true,
-      translateTime: "HH:MM:ss",
-      ignore: "pid,hostname",
+  // Use plain JSON output for both development and production
+  // This works with Deno Deploy and is easily parseable
+  formatters: {
+    level: (label) => {
+      return { level: label };
     },
   },
 });
