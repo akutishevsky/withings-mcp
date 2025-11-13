@@ -24,8 +24,6 @@ export function createApp(config: ServerConfig) {
 
   // Backwards compatibility redirect for old callback URL
   app.get("/auth/callback", (c) => {
-    const code = c.req.query("code");
-    const state = c.req.query("state");
     const url = new URL(c.req.url);
     url.pathname = "/callback";
     return c.redirect(url.toString());
