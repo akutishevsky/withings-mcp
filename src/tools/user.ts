@@ -1,5 +1,6 @@
 import { getUserDevices, getUserGoals } from "../withings/api.js";
 import { createLogger } from "../utils/logger.js";
+import { addReadableTimestamps } from "../utils/timestamp.js";
 
 const logger = createLogger({ component: "tools:user" });
 
@@ -17,11 +18,14 @@ export function registerUserTools(server: any, mcpAccessToken: string) {
       try {
         const devices = await getUserDevices(mcpAccessToken);
 
+        // Add readable datetime fields for timestamps
+        const processedData = addReadableTimestamps(devices);
+
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(devices, null, 2),
+              text: JSON.stringify(processedData, null, 2),
             },
           ],
         };

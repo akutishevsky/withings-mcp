@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { listStethoRecords, getStethoSignal } from "../withings/api.js";
 import { createLogger } from "../utils/logger.js";
+import { addReadableTimestamps } from "../utils/timestamp.js";
 
 const logger = createLogger({ component: "tools:stetho" });
 
@@ -38,11 +39,14 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
           args.offset
         );
 
+        // Add readable datetime fields for timestamps
+        const processedData = addReadableTimestamps(records);
+
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(records, null, 2),
+              text: JSON.stringify(processedData, null, 2),
             },
           ],
         };

@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { getSleep, getSleepSummary } from "../withings/api.js";
 import { createLogger } from "../utils/logger.js";
+import {
+  addReadableTimestamps,
+  addReadableNightEvents,
+} from "../utils/timestamp.js";
 
 const logger = createLogger({ component: "tools:sleep" });
 
@@ -35,11 +39,15 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
           args.enddate,
           args.data_fields
         );
+
+        // Add readable datetime fields for timestamps
+        const processedData = addReadableTimestamps(sleepData);
+
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(sleepData, null, 2),
+              text: JSON.stringify(processedData, null, 2),
             },
           ],
         };
@@ -111,11 +119,22 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
           args.lastupdate,
           args.data_fields
         );
+
+        // Add readable datetime fields for timestamps
+        let processedData = addReadableTimestamps(sleepData);
+
+        // Process each sleep summary for night_events timestamps
+        if (processedData?.series) {
+          processedData.series = processedData.series.map((sleepSummary: any) =>
+            addReadableNightEvents(sleepSummary)
+          );
+        }
+
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(sleepData, null, 2),
+              text: JSON.stringify(processedData, null, 2),
             },
           ],
         };

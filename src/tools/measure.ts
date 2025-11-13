@@ -6,6 +6,7 @@ import {
   getIntradayActivity,
 } from "../withings/api.js";
 import { createLogger } from "../utils/logger.js";
+import { addReadableTimestamps } from "../utils/timestamp.js";
 
 const logger = createLogger({ component: "tools:measure" });
 
@@ -123,11 +124,14 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           });
         }
 
+        // Add readable datetime fields for timestamps
+        const processedData = addReadableTimestamps(measures);
+
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(measures, null, 2),
+              text: JSON.stringify(processedData, null, 2),
             },
           ],
         };
@@ -210,11 +214,14 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           });
         }
 
+        // Add readable datetime fields for timestamps
+        const processedData = addReadableTimestamps(workouts);
+
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(workouts, null, 2),
+              text: JSON.stringify(processedData, null, 2),
             },
           ],
         };
@@ -286,11 +293,14 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           args.data_fields
         );
 
+        // Add readable datetime fields for timestamps
+        const processedData = addReadableTimestamps(activity);
+
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(activity, null, 2),
+              text: JSON.stringify(processedData, null, 2),
             },
           ],
         };
@@ -348,11 +358,14 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           args.data_fields
         );
 
+        // Add readable datetime fields for timestamps
+        const processedData = addReadableTimestamps(intradayActivity);
+
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(intradayActivity, null, 2),
+              text: JSON.stringify(processedData, null, 2),
             },
           ],
         };
