@@ -243,3 +243,17 @@ export async function getIntradayActivity(
 
   return await makeWithingsRequest(mcpToken, "/v2/measure", "getintradayactivity", params);
 }
+
+/**
+ * Get list of user's linked devices
+ */
+export async function getUserDevices(mcpToken: string): Promise<any> {
+  return await makeWithingsRequest(mcpToken, "/v2/user", "getdevice", {});
+}
+
+/**
+ * Get user's goals
+ */
+export async function getUserGoals(mcpToken: string): Promise<any> {
+  return await makeWithingsRequest(mcpToken, "/v2/user", "getgoals", {});
+}
