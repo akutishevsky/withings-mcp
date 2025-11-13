@@ -9,15 +9,15 @@ export interface ServerConfig {
     clientSecret: string;
     redirectUri: string;
   };
-  mcpEndpoint?: string;
 }
+
+const MCP_ENDPOINT = "/mcp";
 
 /**
  * Create and configure the Hono application
  */
 export function createApp(config: ServerConfig) {
   const app = new Hono();
-  const mcpEndpoint = config.mcpEndpoint || "/mcp";
 
   // Mount OAuth router at root level (per spec)
   app.route("/", createOAuthRouter(config.oauthConfig));
@@ -32,8 +32,8 @@ export function createApp(config: ServerConfig) {
   });
 
   // MCP endpoints - GET and POST
-  app.get(mcpEndpoint, authenticateBearer, handleMcpGet);
-  app.post(mcpEndpoint, authenticateBearer, handleMcpPost);
+  app.get(MCP_ENDPOINT, authenticateBearer, handleMcpGet);
+  app.post(MCP_ENDPOINT, authenticateBearer, handleMcpPost);
 
   // OAuth metadata discovery endpoint
   app.get("/.well-known/oauth-authorization-server", (c) => {
@@ -48,7 +48,7 @@ export function createApp(config: ServerConfig) {
       code_challenge_methods_supported: ["S256"],
       token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
       // MCP-specific metadata
-      mcp_endpoint: `${baseUrl}${mcpEndpoint}`,
+      mcp_endpoint: `${baseUrl}${MCP_ENDPOINT}`,
     });
   });
 

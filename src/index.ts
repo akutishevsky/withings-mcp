@@ -16,10 +16,7 @@ const oauthConfig = {
 };
 
 // Create and configure the app
-const app = createApp({
-  oauthConfig,
-  mcpEndpoint: "/mcp",
-});
+const app = createApp({ oauthConfig });
 
 // Export for Deno Deploy
 export default {

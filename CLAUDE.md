@@ -38,7 +38,7 @@ src/
 │   ├── token-store.ts       # MCP ↔ Withings token mapping
 │   └── auth.ts              # Legacy auth (unused)
 ├── server/                   # Server components
-│   ├── app.ts               # Hono app setup & route mounting
+│   ├── app.ts               # Hono app setup, route mounting, MCP_ENDPOINT constant
 │   ├── mcp-endpoints.ts     # MCP GET/POST handlers for /mcp endpoint
 │   └── middleware.ts        # Bearer token authentication
 ├── tools/                    # MCP tools organized by Withings API category
@@ -73,6 +73,7 @@ The server uses **SSE (Server-Sent Events)** for MCP communication per the speci
 - **GET /mcp**: Establishes SSE stream for server-to-client messages. Each connection gets a unique `Mcp-Session-Id` and creates a new `McpServer` instance.
 - **POST /mcp**: Receives JSON-RPC messages from client, forwarded to the session's transport.
 - **Authentication**: Bearer token (MCP access token) required in `Authorization` header.
+- **Endpoint**: The MCP endpoint is always `/mcp` (defined as `MCP_ENDPOINT` constant in src/server/app.ts)
 
 **Session Management** (src/transport/mcp-transport.ts):
 - Sessions timeout after 30 minutes of inactivity
