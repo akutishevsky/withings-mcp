@@ -69,10 +69,11 @@ Uses **Deno KV** (@deno/kv) for persistent storage:
 
 ### Key Files
 
-- **src/index.ts**: Main entry point, Hono app setup, MCP endpoint handlers
+- **src/index.ts**: Main entry point, Hono app setup, MCP endpoint handlers, tool registration
 - **src/oauth.ts**: OAuth 2.0 endpoints (`/authorize`, `/callback`, `/token`, `/register`)
 - **src/mcp-transport.ts**: Custom SSE Transport implementation for MCP SDK
 - **src/token-store.ts**: MCP-to-Withings token mapping
+- **src/withings-api.ts**: Withings API client functions and request handling
 - **src/auth.ts**: Legacy auth implementation (unused in current implementation)
 
 ## Environment Variables
@@ -89,7 +90,56 @@ See `.env.example` for template.
 
 ## MCP Tools
 
-Currently no tools are registered (see TODO comments in src/index.ts:39 and src/index.ts:99). Tools should be registered on the per-session `McpServer` instance created in the GET /mcp endpoint, not on the global instance.
+The server implements three MCP tools for accessing Withings health data. All tools are registered on per-session `McpServer` instances (see src/index.ts:147-349) to ensure proper session isolation:
+
+### get_sleep_summary
+Retrieves sleep summary data including:
+- Sleep duration and stages (light, deep, REM)
+- Heart rate metrics during sleep
+- Breathing quality
+- Sleep score
+
+**Parameters:**
+- `startdateymd`: Start date (YYYY-MM-DD format)
+- `enddateymd`: End date (YYYY-MM-DD format)
+- `lastupdate`: Unix timestamp for sync (alternative to date range)
+- `data_fields`: Optional comma-separated list of specific fields
+
+### get_measures
+Retrieves health measures with automatic type descriptions and calculated values:
+- Weight, height, body composition (fat mass, muscle mass, bone mass)
+- Blood pressure (systolic/diastolic)
+- Heart rate and pulse wave velocity
+- Temperature (body, skin)
+- Advanced metrics (VO2 max, vascular age, metabolic age, BMR)
+- ECG intervals, atrial fibrillation detection
+- Body composition details (hydration, visceral fat, extracellular/intracellular water)
+
+**Parameters:**
+- `meastype`: Single measure type ID
+- `meastypes`: Comma-separated list of measure type IDs
+- `startdate`/`enddate`: Unix timestamps for date range
+- `lastupdate`: Unix timestamp for sync
+- `offset`: Pagination offset
+
+**Response enhancement:** Each measure includes `type_description` and `calculated_value` fields added by the server (src/index.ts:256-271).
+
+### get_workouts
+Retrieves workout summaries with comprehensive metrics:
+- Calories burned and workout intensity
+- Heart rate data (average, min, max, zones)
+- Distance, steps, elevation
+- Swimming metrics (laps, strokes, pool length)
+- SpO2 levels and pause durations
+
+**Parameters:**
+- `startdateymd`: Start date (YYYY-MM-DD format)
+- `enddateymd`: End date (YYYY-MM-DD format)
+- `lastupdate`: Unix timestamp for sync
+- `offset`: Pagination offset
+- `data_fields`: Comma-separated list of fields (defaults to all fields)
+
+**Response transformation:** The `category` field is removed from workout series (src/index.ts:320-326).
 
 ## Important Implementation Details
 
@@ -106,7 +156,20 @@ Each SSE connection creates a **separate McpServer instance** (src/index.ts:87).
 
 ## Withings API Integration
 
+**Authentication:**
 - Auth URL: `https://account.withings.com/oauth2_user/authorize2`
 - Token URL: `https://wbsapi.withings.net/v2/oauth2`
 - Scopes: `user.metrics,user.activity`
 - Token response format uses `action: "requesttoken"` and returns `status: 0` on success
+
+**API Endpoints** (src/withings-api.ts):
+- Base URL: `https://wbsapi.withings.net`
+- Sleep: `/v2/sleep` with action `getsummary`
+- Measures: `/measure` with action `getmeas`
+- Workouts: `/v2/measure` with action `getworkouts`
+
+**API Client** (src/withings-api.ts:8):
+- `makeWithingsRequest()`: Generic authenticated request handler
+- Automatically maps MCP tokens to Withings tokens via token store
+- Error handling for Withings API status codes (status !== 0)
+- All requests use POST with `application/x-www-form-urlencoded` content type
