@@ -35,8 +35,7 @@ The codebase is organized by context into focused modules:
 src/
 ├── auth/                     # Authentication & Authorization
 │   ├── oauth.ts             # OAuth 2.0 endpoints (/authorize, /callback, /token, /register)
-│   ├── token-store.ts       # MCP ↔ Withings token mapping
-│   └── auth.ts              # Legacy auth (unused)
+│   └── token-store.ts       # MCP ↔ Withings token mapping
 ├── server/                   # Server components
 │   ├── app.ts               # Hono app setup, route mounting, MCP_ENDPOINT constant
 │   ├── mcp-endpoints.ts     # MCP GET/POST handlers for /mcp endpoint
