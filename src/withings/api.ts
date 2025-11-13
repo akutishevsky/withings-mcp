@@ -183,3 +183,63 @@ export async function getWorkouts(
 
   return await makeWithingsRequest(mcpToken, "/v2/measure", "getworkouts", params);
 }
+
+/**
+ * Get daily aggregated activity data
+ */
+export async function getActivity(
+  mcpToken: string,
+  startDateYmd?: string,
+  endDateYmd?: string,
+  lastUpdate?: number,
+  offset?: number,
+  dataFields?: string
+): Promise<any> {
+  const params: Record<string, any> = {};
+
+  if (lastUpdate) {
+    params.lastupdate = lastUpdate;
+  } else if (startDateYmd && endDateYmd) {
+    params.startdateymd = startDateYmd;
+    params.enddateymd = endDateYmd;
+  } else {
+    throw new Error("Either lastupdate or both startdateymd and enddateymd are required");
+  }
+
+  if (offset !== undefined) {
+    params.offset = offset;
+  }
+
+  if (dataFields) {
+    params.data_fields = dataFields;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/v2/measure", "getactivity", params);
+}
+
+/**
+ * Get high-frequency intraday activity data
+ * Note: If startdate and enddate are separated by more than 24h, only the first 24h after startdate will be returned
+ */
+export async function getIntradayActivity(
+  mcpToken: string,
+  startDate?: number,
+  endDate?: number,
+  dataFields?: string
+): Promise<any> {
+  const params: Record<string, any> = {};
+
+  if (startDate !== undefined) {
+    params.startdate = startDate;
+  }
+
+  if (endDate !== undefined) {
+    params.enddate = endDate;
+  }
+
+  if (dataFields) {
+    params.data_fields = dataFields;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/v2/measure", "getintradayactivity", params);
+}
