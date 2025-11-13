@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { getMeasures, getWorkouts } from "../withings/api.js";
 import { createLogger } from "../utils/logger.js";
 
@@ -47,18 +48,20 @@ const MEASURE_TYPES_DESCRIPTION = "1=Weight(kg), 4=Height(meter), 5=Fat Free Mas
 
 export function registerMeasureTools(server: any, mcpAccessToken: string) {
   // Register get_measures tool
+  const getMeasuresInputSchema = z.object({
+    meastype: z.number().optional().describe(`Single measure type ID. Available types: ${MEASURE_TYPES_DESCRIPTION}`),
+    meastypes: z.string().optional().describe(`Comma-separated list of measure type IDs (e.g., '1,9,10' for weight and blood pressure). Available types: ${MEASURE_TYPES_DESCRIPTION}`),
+    startdate: z.number().optional().describe("Start date as Unix timestamp"),
+    enddate: z.number().optional().describe("End date as Unix timestamp"),
+    lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated/created after this date. Use for synchronization instead of startdate/enddate"),
+    offset: z.number().optional().describe("Pagination offset. Use value from previous response when more=1"),
+  });
+
   server.registerTool(
     "get_measures",
     {
       description: "Get health measures including weight, height, body composition, blood pressure, heart rate, temperature, and more. Supports single or multiple measure types.",
-      inputSchema: {
-        meastype: z.number().optional().describe(`Single measure type ID. Available types: ${MEASURE_TYPES_DESCRIPTION}`),
-        meastypes: z.string().optional().describe(`Comma-separated list of measure type IDs (e.g., '1,9,10' for weight and blood pressure). Available types: ${MEASURE_TYPES_DESCRIPTION}`),
-        startdate: z.number().optional().describe("Start date as Unix timestamp"),
-        enddate: z.number().optional().describe("End date as Unix timestamp"),
-        lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated/created after this date. Use for synchronization instead of startdate/enddate"),
-        offset: z.number().optional().describe("Pagination offset. Use value from previous response when more=1"),
-      },
+      inputSchema: zodToJsonSchema(getMeasuresInputSchema, "getMeasuresInput"),
     },
     async (args: any) => {
       logger.info("Tool invoked: get_measures");
@@ -114,17 +117,19 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
   );
 
   // Register get_workouts tool
+  const getWorkoutsInputSchema = z.object({
+    startdateymd: z.string().optional().describe("Start date in YYYY-MM-DD format (e.g., '2024-01-15'). Required if lastupdate not provided."),
+    enddateymd: z.string().optional().describe("End date in YYYY-MM-DD format (e.g., '2024-01-20'). Required if startdateymd is provided."),
+    lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated or created after this date. Use this instead of date range for synchronization."),
+    offset: z.number().optional().describe("Pagination offset. Use value from previous response when more=true"),
+    data_fields: z.string().optional().default("calories,intensity,manual_distance,manual_calories,hr_average,hr_min,hr_max,hr_zone_0,hr_zone_1,hr_zone_2,hr_zone_3,pause_duration,algo_pause_duration,spo2_average,steps,distance,elevation,pool_laps,strokes,pool_length").describe("Comma-separated list of data fields to return. Available fields: calories=Active calories(Kcal), intensity=Workout intensity(0-100), manual_distance=User-entered distance(m), manual_calories=User-entered calories(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec), pause_duration=User pause time(sec), algo_pause_duration=Device-detected pause time(sec), spo2_average=Average SpO2(%), steps=Step count, distance=Distance(m), elevation=Floors climbed, pool_laps=Pool lap count, strokes=Stroke count, pool_length=Pool length(m). Defaults to all fields."),
+  });
+
   server.registerTool(
     "get_workouts",
     {
       description: "Get workout summaries including calories burned, heart rate data, distance, steps, elevation, and swimming metrics. Returns aggregated data for each workout session. By default returns ALL available data fields.",
-      inputSchema: {
-        startdateymd: z.string().optional().describe("Start date in YYYY-MM-DD format (e.g., '2024-01-15'). Required if lastupdate not provided."),
-        enddateymd: z.string().optional().describe("End date in YYYY-MM-DD format (e.g., '2024-01-20'). Required if startdateymd is provided."),
-        lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated or created after this date. Use this instead of date range for synchronization."),
-        offset: z.number().optional().describe("Pagination offset. Use value from previous response when more=true"),
-        data_fields: z.string().optional().default("calories,intensity,manual_distance,manual_calories,hr_average,hr_min,hr_max,hr_zone_0,hr_zone_1,hr_zone_2,hr_zone_3,pause_duration,algo_pause_duration,spo2_average,steps,distance,elevation,pool_laps,strokes,pool_length").describe("Comma-separated list of data fields to return. Available fields: calories=Active calories(Kcal), intensity=Workout intensity(0-100), manual_distance=User-entered distance(m), manual_calories=User-entered calories(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec), pause_duration=User pause time(sec), algo_pause_duration=Device-detected pause time(sec), spo2_average=Average SpO2(%), steps=Step count, distance=Distance(m), elevation=Floors climbed, pool_laps=Pool lap count, strokes=Stroke count, pool_length=Pool length(m). Defaults to all fields."),
-      },
+      inputSchema: zodToJsonSchema(getWorkoutsInputSchema, "getWorkoutsInput"),
     },
     async (args: any) => {
       logger.info("Tool invoked: get_workouts");
