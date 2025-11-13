@@ -24,8 +24,10 @@ export function createApp(config: ServerConfig) {
   app.use("*", cors({
     origin: "*",
     allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "Mcp-Session-Id"],
-    exposeHeaders: ["Mcp-Session-Id"],
+    allowHeaders: ["Content-Type", "Authorization", "Mcp-Session-Id", "Accept"],
+    exposeHeaders: ["Mcp-Session-Id", "Content-Type"],
+    credentials: false,
+    maxAge: 86400,
   }));
 
   // Mount OAuth router at root level (per spec)
@@ -62,6 +64,15 @@ export function createApp(config: ServerConfig) {
   // Health check endpoint
   app.get("/health", (c) => {
     return c.json({ status: "ok" });
+  });
+
+  // Error handler
+  app.onError((err, c) => {
+    console.error("Unhandled error:", err);
+    return c.json({
+      error: "internal_server_error",
+      error_description: err.message
+    }, 500);
   });
 
   return app;
