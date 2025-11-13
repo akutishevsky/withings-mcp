@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { readFile } from "node:fs/promises";
 import { createOAuthRouter } from "../auth/oauth.js";
 import { authenticateBearer } from "./middleware.js";
 import { handleMcpGet, handleMcpPost } from "./mcp-endpoints.js";
@@ -64,7 +65,7 @@ export function createApp(config: ServerConfig) {
   // Favicon endpoint
   app.get("/favicon.ico", async (c) => {
     try {
-      const file = await Deno.readFile("./public/favicon.ico");
+      const file = await readFile("./public/favicon.ico");
       return c.body(file, 200, { "Content-Type": "image/x-icon" });
     } catch {
       return c.notFound();
