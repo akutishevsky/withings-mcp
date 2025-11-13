@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { getMeasures, getWorkouts } from "../withings/api.js";
+import {
+  getMeasures,
+  getWorkouts,
+  getActivity,
+  getIntradayActivity,
+} from "../withings/api.js";
 import { createLogger } from "../utils/logger.js";
 
 const logger = createLogger({ component: "tools:measure" });
@@ -43,21 +48,46 @@ const MEASURE_TYPE_MAP: Record<number, string> = {
   229: "Electrochemical Skin Conductance (ESC)",
 };
 
-const MEASURE_TYPES_DESCRIPTION = "1=Weight(kg), 4=Height(meter), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic Blood Pressure(mmHg), 10=Systolic Blood Pressure(mmHg), 11=Heart Pulse(bpm)-only for BPM and scale devices, 12=Temperature(celsius), 54=SP02(%), 71=Body Temperature(celsius), 73=Skin Temperature(celsius), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max is a numerical measurement of your body's ability to consume oxygen(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval duration based on ECG signal, 136=PR interval duration based on ECG signal, 137=QT interval duration based on ECG signal, 138=Corrected QT interval duration based on ECG signal, 139=Atrial fibrillation result from PPG, 155=Vascular age, 167=Nerve Health Score Conductance 2 electrodes Feet, 168=Extracellular Water in kg, 169=Intracellular Water in kg, 170=Visceral Fat(without unity), 173=Fat Free Mass for segments, 174=Fat Mass for segments in mass unit, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)";
+const MEASURE_TYPES_DESCRIPTION =
+  "1=Weight(kg), 4=Height(meter), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic Blood Pressure(mmHg), 10=Systolic Blood Pressure(mmHg), 11=Heart Pulse(bpm)-only for BPM and scale devices, 12=Temperature(celsius), 54=SP02(%), 71=Body Temperature(celsius), 73=Skin Temperature(celsius), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max is a numerical measurement of your body's ability to consume oxygen(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval duration based on ECG signal, 136=PR interval duration based on ECG signal, 137=QT interval duration based on ECG signal, 138=Corrected QT interval duration based on ECG signal, 139=Atrial fibrillation result from PPG, 155=Vascular age, 167=Nerve Health Score Conductance 2 electrodes Feet, 168=Extracellular Water in kg, 169=Intracellular Water in kg, 170=Visceral Fat(without unity), 173=Fat Free Mass for segments, 174=Fat Mass for segments in mass unit, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)";
 
 export function registerMeasureTools(server: any, mcpAccessToken: string) {
   // Register get_measures tool
   server.registerTool(
     "get_measures",
     {
-      description: "Get health measures including weight, height, body composition, blood pressure, heart rate, temperature, and more. Supports single or multiple measure types.",
+      description:
+        "Get health measures including weight, height, body composition, blood pressure, heart rate, temperature, and more. Supports single or multiple measure types.",
       inputSchema: {
-        meastype: z.number().optional().describe(`Single measure type ID. Available types: ${MEASURE_TYPES_DESCRIPTION}`),
-        meastypes: z.string().optional().describe(`Comma-separated list of measure type IDs (e.g., '1,9,10' for weight and blood pressure). Available types: ${MEASURE_TYPES_DESCRIPTION}`),
-        startdate: z.number().optional().describe("Start date as Unix timestamp"),
+        meastype: z
+          .number()
+          .optional()
+          .describe(
+            `Single measure type ID. Available types: ${MEASURE_TYPES_DESCRIPTION}`
+          ),
+        meastypes: z
+          .string()
+          .optional()
+          .describe(
+            `Comma-separated list of measure type IDs (e.g., '1,9,10' for weight and blood pressure). Available types: ${MEASURE_TYPES_DESCRIPTION}`
+          ),
+        startdate: z
+          .number()
+          .optional()
+          .describe("Start date as Unix timestamp"),
         enddate: z.number().optional().describe("End date as Unix timestamp"),
-        lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated/created after this date. Use for synchronization instead of startdate/enddate"),
-        offset: z.number().optional().describe("Pagination offset. Use value from previous response when more=1"),
+        lastupdate: z
+          .number()
+          .optional()
+          .describe(
+            "Unix timestamp for requesting data updated/created after this date. Use for synchronization instead of startdate/enddate"
+          ),
+        offset: z
+          .number()
+          .optional()
+          .describe(
+            "Pagination offset. Use value from previous response when more=1"
+          ),
       },
     },
     async (args: any) => {
@@ -78,10 +108,13 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           measures.measuregrps = measures.measuregrps.map((grp: any) => {
             if (grp.measures) {
               grp.measures = grp.measures.map((measure: any) => {
-                const calculatedValue = measure.value * Math.pow(10, measure.unit);
+                const calculatedValue =
+                  measure.value * Math.pow(10, measure.unit);
                 return {
                   ...measure,
-                  type_description: MEASURE_TYPE_MAP[measure.type] || `Unknown type ${measure.type}`,
+                  type_description:
+                    MEASURE_TYPE_MAP[measure.type] ||
+                    `Unknown type ${measure.type}`,
                   calculated_value: calculatedValue,
                 };
               });
@@ -104,7 +137,9 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           content: [
             {
               type: "text",
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+              text: `Error: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
             },
           ],
           isError: true,
@@ -117,13 +152,42 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
   server.registerTool(
     "get_workouts",
     {
-      description: "Get workout summaries including calories burned, heart rate data, distance, steps, elevation, and swimming metrics. Returns aggregated data for each workout session. By default returns ALL available data fields.",
+      description:
+        "Get workout summaries including calories burned, heart rate data, distance, steps, elevation, and swimming metrics. Returns aggregated data for each workout session. By default returns ALL available data fields.",
       inputSchema: {
-        startdateymd: z.string().optional().describe("Start date in YYYY-MM-DD format (e.g., '2024-01-15'). Required if lastupdate not provided."),
-        enddateymd: z.string().optional().describe("End date in YYYY-MM-DD format (e.g., '2024-01-20'). Required if startdateymd is provided."),
-        lastupdate: z.number().optional().describe("Unix timestamp for requesting data updated or created after this date. Use this instead of date range for synchronization."),
-        offset: z.number().optional().describe("Pagination offset. Use value from previous response when more=true"),
-        data_fields: z.string().optional().default("calories,intensity,manual_distance,manual_calories,hr_average,hr_min,hr_max,hr_zone_0,hr_zone_1,hr_zone_2,hr_zone_3,pause_duration,algo_pause_duration,spo2_average,steps,distance,elevation,pool_laps,strokes,pool_length").describe("Comma-separated list of data fields to return. Available fields: calories=Active calories(Kcal), intensity=Workout intensity(0-100), manual_distance=User-entered distance(m), manual_calories=User-entered calories(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec), pause_duration=User pause time(sec), algo_pause_duration=Device-detected pause time(sec), spo2_average=Average SpO2(%), steps=Step count, distance=Distance(m), elevation=Floors climbed, pool_laps=Pool lap count, strokes=Stroke count, pool_length=Pool length(m). Defaults to all fields."),
+        startdateymd: z
+          .string()
+          .optional()
+          .describe(
+            "Start date in YYYY-MM-DD format (e.g., '2024-01-15'). Required if lastupdate not provided."
+          ),
+        enddateymd: z
+          .string()
+          .optional()
+          .describe(
+            "End date in YYYY-MM-DD format (e.g., '2024-01-20'). Required if startdateymd is provided."
+          ),
+        lastupdate: z
+          .number()
+          .optional()
+          .describe(
+            "Unix timestamp for requesting data updated or created after this date. Use this instead of date range for synchronization."
+          ),
+        offset: z
+          .number()
+          .optional()
+          .describe(
+            "Pagination offset. Use value from previous response when more=true"
+          ),
+        data_fields: z
+          .string()
+          .optional()
+          .default(
+            "calories,intensity,manual_distance,manual_calories,hr_average,hr_min,hr_max,hr_zone_0,hr_zone_1,hr_zone_2,hr_zone_3,pause_duration,algo_pause_duration,spo2_average,steps,distance,elevation,pool_laps,strokes,pool_length"
+          )
+          .describe(
+            "Comma-separated list of data fields to return. Available fields: calories=Active calories(Kcal), intensity=Workout intensity(0-100), manual_distance=User-entered distance(m), manual_calories=User-entered calories(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec), pause_duration=User pause time(sec), algo_pause_duration=Device-detected pause time(sec), spo2_average=Average SpO2(%), steps=Step count, distance=Distance(m), elevation=Floors climbed, pool_laps=Pool lap count, strokes=Stroke count, pool_length=Pool length(m). Defaults to all fields."
+          ),
       },
     },
     async (args: any) => {
@@ -160,7 +224,147 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           content: [
             {
               type: "text",
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+              text: `Error: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Register get_activity tool
+  server.registerTool(
+    "get_activity",
+    {
+      description:
+        "Get daily aggregated activity data including steps, distance, elevation, heart rate, calories, and activity durations (soft/moderate/intense). Returns summary data aggregated per day.",
+      inputSchema: {
+        startdateymd: z
+          .string()
+          .optional()
+          .describe(
+            "Start date in YYYY-MM-DD format (e.g., '2024-01-15'). Required if lastupdate not provided."
+          ),
+        enddateymd: z
+          .string()
+          .optional()
+          .describe(
+            "End date in YYYY-MM-DD format (e.g., '2024-01-20'). Required if startdateymd is provided."
+          ),
+        lastupdate: z
+          .number()
+          .optional()
+          .describe(
+            "Unix timestamp for requesting data updated or created after this date. Use this instead of date range for synchronization."
+          ),
+        offset: z
+          .number()
+          .optional()
+          .describe(
+            "Pagination offset. Use value from previous response when more=true"
+          ),
+        data_fields: z
+          .string()
+          .optional()
+          .describe(
+            "Comma-separated list of data fields to return. Available fields: steps=Number of steps, distance=Distance travelled(m), elevation=Floors climbed, soft=Soft activity duration(sec), moderate=Moderate activity duration(sec), intense=Intense activity duration(sec), active=Sum of intense and moderate durations(sec), calories=Active calories burned(Kcal), totalcalories=Total calories burned(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec). If not specified, all fields are returned."
+          ),
+      },
+    },
+    async (args: any) => {
+      logger.info("Tool invoked: get_activity");
+      try {
+        const activity = await getActivity(
+          mcpAccessToken,
+          args.startdateymd,
+          args.enddateymd,
+          args.lastupdate,
+          args.offset,
+          args.data_fields
+        );
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(activity, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        logger.error("Tool error: get_activity");
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Register get_intraday_activity tool
+  server.registerTool(
+    "get_intraday_activity",
+    {
+      description:
+        "Get high-frequency intraday activity data captured throughout the day. Returns time-series data with timestamps. Note: If startdate and enddate are separated by more than 24h, only the first 24h after startdate will be returned. If no dates provided, returns most recent activity data.",
+      inputSchema: {
+        startdate: z
+          .number()
+          .optional()
+          .describe(
+            "Start date as Unix timestamp. Optional - if not provided, returns most recent data."
+          ),
+        enddate: z
+          .number()
+          .optional()
+          .describe(
+            "End date as Unix timestamp. Optional - if not provided, returns most recent data. Note: Maximum 24h range from startdate."
+          ),
+        data_fields: z
+          .string()
+          .optional()
+          .describe(
+            "Comma-separated list of data fields to return. Available fields: steps=Number of steps, elevation=Floors climbed, calories=Active calories burned(Kcal), distance=Distance travelled(m), stroke=Number of strokes, pool_lap=Number of pool laps, duration=Activity duration(sec), heart_rate=Measured heart rate(bpm), spo2_auto=SpO2 percentage, rmssd=HRV-Root mean square of successive differences(ms), sdnn1=HRV-Standard deviation over 1 minute(ms), hrv_quality=HRV quality score. If not specified, all fields are returned."
+          ),
+      },
+    },
+    async (args: any) => {
+      logger.info("Tool invoked: get_intraday_activity");
+      try {
+        const intradayActivity = await getIntradayActivity(
+          mcpAccessToken,
+          args.startdate,
+          args.enddate,
+          args.data_fields
+        );
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(intradayActivity, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        logger.error("Tool error: get_intraday_activity");
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
             },
           ],
           isError: true,

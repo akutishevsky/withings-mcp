@@ -1,5 +1,8 @@
 import { registerSleepTools } from "./sleep.js";
 import { registerMeasureTools } from "./measure.js";
+import { registerUserTools } from "./user.js";
+import { registerHeartTools } from "./heart.js";
+import { registerStethoTools } from "./stetho.js";
 
 /**
  * Register all Withings tools on an MCP server instance
@@ -9,4 +12,7 @@ import { registerMeasureTools } from "./measure.js";
 export function registerAllTools(server: any, mcpAccessToken: string) {
   registerSleepTools(server, mcpAccessToken);
   registerMeasureTools(server, mcpAccessToken);
+  registerUserTools(server, mcpAccessToken);
+  registerHeartTools(server, mcpAccessToken);
+  registerStethoTools(server, mcpAccessToken);
 }

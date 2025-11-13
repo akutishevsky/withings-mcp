@@ -216,7 +216,6 @@ export function createOAuthRouter(config: OAuthConfig) {
     const body = await c.req.parseBody();
     const grantType = body.grant_type;
     const code = body.code as string;
-    const redirectUri = body.redirect_uri as string;
     const codeVerifier = body.code_verifier as string;
 
     if (grantType !== "authorization_code") {

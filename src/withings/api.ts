@@ -62,7 +62,28 @@ export async function makeWithingsRequest(
 }
 
 /**
- * Get sleep summary data
+ * Get high-frequency sleep data with timestamps
+ */
+export async function getSleep(
+  mcpToken: string,
+  startDate: number,
+  endDate: number,
+  dataFields?: string
+): Promise<any> {
+  const params: Record<string, any> = {
+    startdate: startDate,
+    enddate: endDate,
+  };
+
+  if (dataFields) {
+    params.data_fields = dataFields;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/v2/sleep", "get", params);
+}
+
+/**
+ * Get sleep summary data (aggregated metrics)
  */
 export async function getSleepSummary(
   mcpToken: string,
@@ -161,4 +182,168 @@ export async function getWorkouts(
   }
 
   return await makeWithingsRequest(mcpToken, "/v2/measure", "getworkouts", params);
+}
+
+/**
+ * Get daily aggregated activity data
+ */
+export async function getActivity(
+  mcpToken: string,
+  startDateYmd?: string,
+  endDateYmd?: string,
+  lastUpdate?: number,
+  offset?: number,
+  dataFields?: string
+): Promise<any> {
+  const params: Record<string, any> = {};
+
+  if (lastUpdate) {
+    params.lastupdate = lastUpdate;
+  } else if (startDateYmd && endDateYmd) {
+    params.startdateymd = startDateYmd;
+    params.enddateymd = endDateYmd;
+  } else {
+    throw new Error("Either lastupdate or both startdateymd and enddateymd are required");
+  }
+
+  if (offset !== undefined) {
+    params.offset = offset;
+  }
+
+  if (dataFields) {
+    params.data_fields = dataFields;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/v2/measure", "getactivity", params);
+}
+
+/**
+ * Get high-frequency intraday activity data
+ * Note: If startdate and enddate are separated by more than 24h, only the first 24h after startdate will be returned
+ */
+export async function getIntradayActivity(
+  mcpToken: string,
+  startDate?: number,
+  endDate?: number,
+  dataFields?: string
+): Promise<any> {
+  const params: Record<string, any> = {};
+
+  if (startDate !== undefined) {
+    params.startdate = startDate;
+  }
+
+  if (endDate !== undefined) {
+    params.enddate = endDate;
+  }
+
+  if (dataFields) {
+    params.data_fields = dataFields;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/v2/measure", "getintradayactivity", params);
+}
+
+/**
+ * Get list of user's linked devices
+ */
+export async function getUserDevices(mcpToken: string): Promise<any> {
+  return await makeWithingsRequest(mcpToken, "/v2/user", "getdevice", {});
+}
+
+/**
+ * Get user's goals
+ */
+export async function getUserGoals(mcpToken: string): Promise<any> {
+  return await makeWithingsRequest(mcpToken, "/v2/user", "getgoals", {});
+}
+
+/**
+ * List ECG records with Afib classification
+ */
+export async function listHeartRecords(
+  mcpToken: string,
+  startDate?: number,
+  endDate?: number,
+  offset?: number
+): Promise<any> {
+  const params: Record<string, any> = {};
+
+  if (startDate !== undefined) {
+    params.startdate = startDate;
+  }
+
+  if (endDate !== undefined) {
+    params.enddate = endDate;
+  }
+
+  if (offset !== undefined) {
+    params.offset = offset;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/v2/heart", "list", params);
+}
+
+/**
+ * Get detailed ECG signal data
+ */
+export async function getHeartSignal(
+  mcpToken: string,
+  signalId: string,
+  withFiltered?: boolean,
+  withIntervals?: boolean
+): Promise<any> {
+  const params: Record<string, any> = {
+    signalid: signalId,
+  };
+
+  if (withFiltered !== undefined) {
+    params.with_filtered = withFiltered;
+  }
+
+  if (withIntervals !== undefined) {
+    params.with_intervals = withIntervals;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/v2/heart", "get", params);
+}
+
+/**
+ * List stethoscope recordings
+ */
+export async function listStethoRecords(
+  mcpToken: string,
+  startDate?: number,
+  endDate?: number,
+  offset?: number
+): Promise<any> {
+  const params: Record<string, any> = {};
+
+  if (startDate !== undefined) {
+    params.startdate = startDate;
+  }
+
+  if (endDate !== undefined) {
+    params.enddate = endDate;
+  }
+
+  if (offset !== undefined) {
+    params.offset = offset;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/v2/stetho", "list", params);
+}
+
+/**
+ * Get detailed stethoscope signal data
+ */
+export async function getStethoSignal(
+  mcpToken: string,
+  signalId: string
+): Promise<any> {
+  const params: Record<string, any> = {
+    signalid: signalId,
+  };
+
+  return await makeWithingsRequest(mcpToken, "/v2/stetho", "get", params);
 }
