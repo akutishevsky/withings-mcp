@@ -257,3 +257,53 @@ export async function getUserDevices(mcpToken: string): Promise<any> {
 export async function getUserGoals(mcpToken: string): Promise<any> {
   return await makeWithingsRequest(mcpToken, "/v2/user", "getgoals", {});
 }
+
+/**
+ * List ECG records with Afib classification
+ */
+export async function listHeartRecords(
+  mcpToken: string,
+  startDate?: number,
+  endDate?: number,
+  offset?: number
+): Promise<any> {
+  const params: Record<string, any> = {};
+
+  if (startDate !== undefined) {
+    params.startdate = startDate;
+  }
+
+  if (endDate !== undefined) {
+    params.enddate = endDate;
+  }
+
+  if (offset !== undefined) {
+    params.offset = offset;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/v2/heart", "list", params);
+}
+
+/**
+ * Get detailed ECG signal data
+ */
+export async function getHeartSignal(
+  mcpToken: string,
+  signalId: string,
+  withFiltered?: boolean,
+  withIntervals?: boolean
+): Promise<any> {
+  const params: Record<string, any> = {
+    signalid: signalId,
+  };
+
+  if (withFiltered !== undefined) {
+    params.with_filtered = withFiltered;
+  }
+
+  if (withIntervals !== undefined) {
+    params.with_intervals = withIntervals;
+  }
+
+  return await makeWithingsRequest(mcpToken, "/v2/heart", "get", params);
+}
