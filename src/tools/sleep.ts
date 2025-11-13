@@ -271,7 +271,6 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
             "Comma-separated list of data fields to return. Available fields: 'hr' (heart rate bpm), 'rr' (respiration rate breaths/min), 'snoring' (total snoring seconds), 'sdnn_1' (HRV standard deviation ms), 'rmssd' (HRV root mean square ms), 'hrv_quality' (HRV quality score), 'mvt_score' (movement intensity 0-255, Sleep Analyzer only), 'chest_movement_rate' (events/min), 'withings_index' (breathing events/hour for Sleep Rx), 'breathing_sounds' (breathing sounds tracked in seconds). If not specified, all available fields are returned."
           ),
       },
-      outputSchema: sleepDataOutputSchema.shape,
     },
     async (args: any) => {
       logger.info("Tool invoked: get_sleep");
@@ -347,7 +346,6 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
               "If not specified, all available fields are returned."
           ),
       },
-      outputSchema: sleepSummaryOutputSchema.shape,
     },
     async (args: any) => {
       logger.info("Tool invoked: get_sleep_summary");
