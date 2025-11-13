@@ -7,10 +7,6 @@ import { registerMeasureTools } from "./measure.js";
  * @param mcpAccessToken - The MCP access token for authentication
  */
 export function registerAllTools(server: any, mcpAccessToken: string) {
-  console.log("Registering Withings tools...");
-
   registerSleepTools(server, mcpAccessToken);
   registerMeasureTools(server, mcpAccessToken);
-
-  console.log("Tools registered successfully");
 }

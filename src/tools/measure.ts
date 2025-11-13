@@ -58,7 +58,6 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      console.log("get_measures tool called with args:", args);
       try {
         const measures = await getMeasures(
           mcpAccessToken,
@@ -96,7 +95,6 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           ],
         };
       } catch (error) {
-        console.error("Error fetching measures:", error);
         return {
           content: [
             {
@@ -124,7 +122,6 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      console.log("get_workouts tool called with args:", args);
       try {
         const workouts = await getWorkouts(
           mcpAccessToken,
@@ -152,7 +149,6 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           ],
         };
       } catch (error) {
-        console.error("Error fetching workouts:", error);
         return {
           content: [
             {

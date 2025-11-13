@@ -165,20 +165,14 @@ export function createOAuthRouter(config: OAuthConfig) {
     const code = c.req.query("code");
     const internalState = c.req.query("state");
 
-    console.log("Withings callback received:", { code: code?.substring(0, 10) + "...", state: internalState });
-
     if (!code || !internalState) {
-      console.error("Missing code or state");
       return c.json({ error: "invalid_request" }, 400);
     }
 
     const session = await oauthStore.getSession(internalState);
     if (!session) {
-      console.error("Session not found for state:", internalState);
       return c.json({ error: "invalid_state" }, 400);
     }
-
-    console.log("Session found, redirectUri:", session.redirectUri);
 
     // Generate authorization code for MCP client
     const authCode = crypto.randomUUID();
@@ -212,20 +206,14 @@ export function createOAuthRouter(config: OAuthConfig) {
     const redirectUri = body.redirect_uri as string;
     const codeVerifier = body.code_verifier as string;
 
-    console.log("Token exchange request:", { grantType, code: code?.substring(0, 10) + "...", hasVerifier: !!codeVerifier });
-
     if (grantType !== "authorization_code") {
-      console.error("Unsupported grant type:", grantType);
       return c.json({ error: "unsupported_grant_type" }, 400);
     }
 
     const authCodeData = await oauthStore.getAuthCode(code);
     if (!authCodeData) {
-      console.error("Auth code not found:", code?.substring(0, 10));
       return c.json({ error: "invalid_grant" }, 400);
     }
-
-    console.log("Auth code found, exchanging with Withings...");
 
     // Validate PKCE if code_challenge was provided
     if (authCodeData.codeChallenge) {
@@ -273,12 +261,8 @@ export function createOAuthRouter(config: OAuthConfig) {
         expiresAt: Date.now() + tokenData.body.expires_in * 1000,
       });
 
-      console.log("Token mapping stored successfully, MCP token generated");
-
       // Clean up auth code
       await oauthStore.deleteAuthCode(code);
-
-      console.log("Returning access token to client");
 
       return c.json({
         access_token: mcpToken,
@@ -286,7 +270,6 @@ export function createOAuthRouter(config: OAuthConfig) {
         expires_in: tokenData.body.expires_in,
       });
     } catch (error) {
-      console.error("Token exchange error:", error);
       return c.json({ error: "server_error", error_description: String(error) }, 500);
     }
   });

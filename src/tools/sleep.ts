@@ -14,7 +14,6 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      console.log("get_sleep_summary tool called with args:", args);
       try {
         const sleepData = await getSleepSummary(
           mcpAccessToken,
@@ -32,7 +31,6 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
           ],
         };
       } catch (error) {
-        console.error("Error fetching sleep data:", error);
         return {
           content: [
             {
