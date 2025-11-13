@@ -101,15 +101,16 @@ class Logger {
       return;
     }
 
-    const logEntry = {
-      level,
-      time: new Date().toISOString(),
-      msg: message,
-      ...this.context,
-      ...(data ? { data: this.redact(data) } : {}),
-    };
+    // Format: INFO [component] message {data}
+    const levelStr = level.toUpperCase().padEnd(5);
+    const component = this.context.component ? `[${this.context.component}] ` : '';
 
-    const output = JSON.stringify(logEntry);
+    let output = `${levelStr} ${component}${message}`;
+
+    if (data) {
+      const redactedData = this.redact(data);
+      output += ` ${JSON.stringify(redactedData)}`;
+    }
 
     switch (level) {
       case "error":
