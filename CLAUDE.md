@@ -43,7 +43,10 @@ src/
 ├── tools/                    # MCP tools organized by Withings API category
 │   ├── index.ts             # Registers all tools on MCP server instances
 │   ├── sleep.ts             # Sleep API: get_sleep_summary
-│   └── measure.ts           # Measure API: get_measures, get_workouts
+│   ├── measure.ts           # Measure API: get_measures, get_workouts, get_activity, get_intraday_activity
+│   ├── user.ts              # User API: get_user_devices, get_user_goals
+│   ├── heart.ts             # Heart API: list_heart_records, get_heart_signal
+│   └── stetho.ts            # Stetho API: list_stetho_records, get_stetho_signal
 ├── transport/               # MCP Protocol Implementation
 │   └── mcp-transport.ts     # Custom SSE transport for MCP SDK
 ├── withings/                # Withings API Integration
@@ -82,6 +85,9 @@ Each module creates a child logger with context:
 - `component: "mcp-endpoints"` - MCP session lifecycle
 - `component: "tools:measure"` - Measure tool invocations
 - `component: "tools:sleep"` - Sleep tool invocations
+- `component: "tools:user"` - User tool invocations
+- `component: "tools:heart"` - Heart tool invocations
+- `component: "tools:stetho"` - Stetho tool invocations
 - `component: "transport"` - Transport and session management
 
 ### OAuth 2.0 Flow Architecture
