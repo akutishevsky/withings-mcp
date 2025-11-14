@@ -17,8 +17,16 @@
     "health",
     "fitness"
   ],
-  "author": "",
+  "author": "akutishevsky",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akutishevsky/withings-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/akutishevsky/withings-mcp/issues"
+  },
+  "homepage": "https://github.com/akutishevsky/withings-mcp#readme",
   "dependencies": {
     "@deno/kv": "^0.8.4",
     "@hono/node-server": "^1.13.7",
