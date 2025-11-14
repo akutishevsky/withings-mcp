@@ -233,6 +233,7 @@ export function createOAuthRouter(config: OAuthConfig) {
     const grantType = body.grant_type;
     const code = body.code as string;
     const codeVerifier = body.code_verifier as string;
+    const redirectUri = body.redirect_uri as string;
 
     if (grantType !== "authorization_code") {
       logger.warn("Token exchange failed: unsupported grant type");
@@ -246,6 +247,12 @@ export function createOAuthRouter(config: OAuthConfig) {
     }
 
     logger.info("Processing token exchange request");
+
+    // Validate redirect_uri matches the one from authorization request
+    if (redirectUri !== authCodeData.redirectUri) {
+      logger.warn("Token exchange failed: redirect_uri mismatch");
+      return c.json({ error: "invalid_grant", error_description: "redirect_uri does not match authorization request" }, 400);
+    }
 
     // Validate PKCE if code_challenge was provided
     if (authCodeData.codeChallenge) {
@@ -307,8 +314,8 @@ export function createOAuthRouter(config: OAuthConfig) {
         expires_in: tokenData.body.expires_in,
       });
     } catch (error) {
-      logger.error("Token exchange error");
-      return c.json({ error: "server_error", error_description: String(error) }, 500);
+      logger.error("Token exchange error", { error: String(error) });
+      return c.json({ error: "server_error", error_description: "Failed to exchange authorization code" }, 500);
     }
     }
   );

@@ -21,6 +21,31 @@ const MCP_ENDPOINT = "/mcp";
 export function createApp(config: ServerConfig) {
   const app = new Hono();
 
+  // Security headers middleware
+  app.use("*", async (c, next) => {
+    await next();
+
+    // Strict-Transport-Security: Force HTTPS in production
+    if (c.req.url.startsWith("https://")) {
+      c.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    }
+
+    // X-Content-Type-Options: Prevent MIME sniffing
+    c.header("X-Content-Type-Options", "nosniff");
+
+    // X-Frame-Options: Prevent clickjacking
+    c.header("X-Frame-Options", "DENY");
+
+    // Content-Security-Policy: Restrict resource loading
+    c.header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'");
+
+    // Referrer-Policy: Control referrer information
+    c.header("Referrer-Policy", "no-referrer");
+
+    // Permissions-Policy: Disable unnecessary browser features
+    c.header("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+  });
+
   // Enable CORS with security restrictions
   // Allow native apps (no Origin header), localhost, and configured origins
   app.use("*", cors({
@@ -98,12 +123,15 @@ export function createApp(config: ServerConfig) {
     return c.json({ status: "ok" });
   });
 
-  // Error handler
+  // Error handler - sanitize error messages to avoid leaking internal details
   app.onError((err, c) => {
+    // Log full error server-side for debugging
     console.error("Unhandled error:", err);
+
+    // Return sanitized error to client
     return c.json({
       error: "internal_server_error",
-      error_description: err.message
+      error_description: "An internal server error occurred. Please try again later."
     }, 500);
   });
 
