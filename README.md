@@ -20,11 +20,18 @@ npm install
 npm run build
 ```
 
-3. Set environment variables:
+3. Generate encryption secret:
+```bash
+npm run generate-secret
+# Copy the output and add it to your .env file or export it
+```
+
+4. Set environment variables:
 ```bash
 export WITHINGS_CLIENT_ID="your_client_id"
 export WITHINGS_CLIENT_SECRET="your_client_secret"
 export WITHINGS_REDIRECT_URI="https://your-app.deno.dev/auth/callback"
+export ENCRYPTION_SECRET="your_generated_secret_here"  # Required: from step 3
 export PORT=3000
 export LOG_LEVEL=info  # Optional: trace, debug, info, warn, error
 export ALLOWED_ORIGINS="https://example.com,https://app.example.com"  # Optional: comma-separated list of allowed browser origins
@@ -44,9 +51,14 @@ deno deploy --prod
 
 3. Set environment variables:
 ```bash
+# Generate encryption secret first
+npm run generate-secret
+# Copy the output value (without 'ENCRYPTION_SECRET=') and use it below
+
 deno deploy env add WITHINGS_CLIENT_ID "your_client_id"
 deno deploy env add WITHINGS_CLIENT_SECRET "your_client_secret"
 deno deploy env add WITHINGS_REDIRECT_URI "https://your-app.deno.dev/auth/callback"
+deno deploy env add ENCRYPTION_SECRET "paste_generated_secret_here"  # Required
 deno deploy env add ALLOWED_ORIGINS "https://example.com,https://app.example.com"  # Optional
 ```
 
@@ -126,13 +138,29 @@ Retrieves workout summaries with comprehensive metrics including calories burned
 - `offset`: Pagination offset
 - `data_fields`: Comma-separated list of fields (defaults to all fields)
 
-## Logging
+## Security
 
-This server uses Pino for structured logging with strict privacy controls:
+### Token Encryption
+
+All Withings access and refresh tokens are encrypted at rest using **AES-256-GCM** before being stored in Deno KV:
+
+- **Algorithm**: AES-256-GCM (authenticated encryption)
+- **Key Derivation**: PBKDF2 with 100,000 iterations
+- **Encryption Key**: Derived from `ENCRYPTION_SECRET` environment variable
+- **Defense in Depth**: Even if the database is compromised, tokens remain protected
+
+**Important**: The `ENCRYPTION_SECRET` must be:
+- At least 32 characters long
+- Randomly generated (use `npm run generate-secret` or `openssl rand -hex 32`)
+- Kept secure and never committed to version control
+- Consistent across server restarts (store securely)
+
+### Logging
+
+This server uses a custom logger with strict privacy controls:
 - **No sensitive data logged**: All tokens, credentials, user IDs, and personal information are automatically redacted
 - **Production ready**: Suitable for public repositories with privacy-first design
 - **Configurable**: Set `LOG_LEVEL` environment variable (trace, debug, info, warn, error)
-- **Pretty printing**: Enabled by default for better readability
 
 All logging is minimal and focused on operational events and debugging, never exposing confidential or user-related information.
 

@@ -39,7 +39,8 @@ src/
 ├── server/                   # Server components
 │   ├── app.ts               # Hono app setup, route mounting, MCP_ENDPOINT constant
 │   ├── mcp-endpoints.ts     # MCP GET/POST handlers for /mcp endpoint
-│   └── middleware.ts        # Bearer token authentication
+│   ├── middleware.ts        # Bearer token authentication
+│   └── rate-limiter.ts      # Rate limiting middleware using Deno KV
 ├── tools/                    # MCP tools organized by Withings API category
 │   ├── index.ts             # Registers all tools on MCP server instances
 │   ├── sleep.ts             # Sleep API: get_sleep_summary
@@ -52,7 +53,8 @@ src/
 ├── withings/                # Withings API Integration
 │   └── api.ts               # Withings API client & request handling
 ├── utils/                    # Utilities
-│   └── logger.ts            # Privacy-safe custom logger for Deno Deploy
+│   ├── logger.ts            # Privacy-safe custom logger for Deno Deploy
+│   └── encryption.ts        # AES-256-GCM encryption for sensitive tokens
 └── index.ts                 # Main entry point (initializes stores & creates app)
 ```
 
@@ -134,6 +136,9 @@ Uses **Deno KV** (@deno/kv) for persistent storage:
 
 **Token Store** (src/auth/token-store.ts):
 - Maps MCP tokens → Withings tokens (access, refresh, userId, expiry)
+- **Security**: Withings tokens encrypted at rest using AES-256-GCM (src/utils/encryption.ts)
+- Encryption key derived from `ENCRYPTION_SECRET` via PBKDF2
+- TTL: 30 days (automatic expiration)
 - Prefix: `["tokens", mcpToken]`
 
 **OAuth Store** (src/auth/oauth.ts):
@@ -147,10 +152,12 @@ Required:
 - `WITHINGS_CLIENT_ID`: From Withings developer console
 - `WITHINGS_CLIENT_SECRET`: From Withings developer console
 - `WITHINGS_REDIRECT_URI`: Callback URL (must match Withings app settings)
+- `ENCRYPTION_SECRET`: Secret key for encrypting tokens at rest (min 32 chars, generate with `npm run generate-secret` or `openssl rand -hex 32`)
 
 Optional:
 - `PORT`: Server port (default: 3000)
 - `LOG_LEVEL`: Logging level - trace, debug, info, warn, error (default: info)
+- `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins for browser-based clients
 
 See `.env.example` for template.
 
