@@ -3,6 +3,7 @@ import { tokenStore } from "./token-store.js";
 import crypto from "node:crypto";
 import { openKv } from "@deno/kv";
 import { createLogger } from "../utils/logger.js";
+import { rateLimit } from "../server/rate-limiter.js";
 
 const logger = createLogger({ component: "oauth" });
 
@@ -107,26 +108,33 @@ export async function initOAuthStore() {
 export function createOAuthRouter(config: OAuthConfig) {
   const oauth = new Hono();
 
-  // Dynamic client registration
-  oauth.post("/register", async (c) => {
-    const body = await c.req.json();
-    const clientId = crypto.randomUUID();
+  // Dynamic client registration (open for MCP compatibility, protected by rate limiting)
+  oauth.post(
+    "/register",
+    rateLimit({ maxRequests: 30, windowMs: 3600000 }), // 30 requests per hour
+    async (c) => {
+      const body = await c.req.json();
+      const clientId = crypto.randomUUID();
 
-    await oauthStore.registerClient(clientId, {
-      clientId,
-      redirectUris: body.redirect_uris || [],
-    });
+      await oauthStore.registerClient(clientId, {
+        clientId,
+        redirectUris: body.redirect_uris || [],
+      });
 
-    logger.info("OAuth client registered");
+      logger.info("OAuth client registered");
 
-    return c.json({
-      client_id: clientId,
-      redirect_uris: body.redirect_uris || [],
-    });
-  });
+      return c.json({
+        client_id: clientId,
+        redirect_uris: body.redirect_uris || [],
+      });
+    }
+  );
 
   // Authorization endpoint - MCP client starts here
-  oauth.get("/authorize", async (c) => {
+  oauth.get(
+    "/authorize",
+    rateLimit({ maxRequests: 60, windowMs: 3600000 }), // 60 requests per hour
+    async (c) => {
     const responseType = c.req.query("response_type");
     const clientId = c.req.query("client_id");
     const redirectUri = c.req.query("redirect_uri");
@@ -167,7 +175,8 @@ export function createOAuthRouter(config: OAuthConfig) {
     withingsAuthUrl.searchParams.append("state", internalState);
 
     return c.redirect(withingsAuthUrl.toString());
-  });
+    }
+  );
 
   // Callback from Withings
   oauth.get("/callback", async (c) => {
@@ -212,7 +221,10 @@ export function createOAuthRouter(config: OAuthConfig) {
   });
 
   // Token endpoint - MCP client exchanges code for token
-  oauth.post("/token", async (c) => {
+  oauth.post(
+    "/token",
+    rateLimit({ maxRequests: 100, windowMs: 3600000 }), // 100 requests per hour
+    async (c) => {
     const body = await c.req.parseBody();
     const grantType = body.grant_type;
     const code = body.code as string;
@@ -294,7 +306,8 @@ export function createOAuthRouter(config: OAuthConfig) {
       logger.error("Token exchange error");
       return c.json({ error: "server_error", error_description: String(error) }, 500);
     }
-  });
+    }
+  );
 
   return oauth;
 }

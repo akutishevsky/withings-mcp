@@ -4,10 +4,12 @@ import { initOAuthStore } from "./auth/oauth.js";
 import { tokenStore } from "./auth/token-store.js";
 import { createApp } from "./server/app.js";
 import { setOAuthConfig } from "./config.js";
+import { initRateLimiter } from "./server/rate-limiter.js";
 
 // Initialize stores
 await tokenStore.init();
 await initOAuthStore();
+await initRateLimiter();
 
 // OAuth configuration from environment
 const oauthConfig = {

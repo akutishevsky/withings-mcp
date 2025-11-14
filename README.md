@@ -27,6 +27,7 @@ export WITHINGS_CLIENT_SECRET="your_client_secret"
 export WITHINGS_REDIRECT_URI="https://your-app.deno.dev/auth/callback"
 export PORT=3000
 export LOG_LEVEL=info  # Optional: trace, debug, info, warn, error
+export ALLOWED_ORIGINS="https://example.com,https://app.example.com"  # Optional: comma-separated list of allowed browser origins
 ```
 
 ## Deployment to Deno Deploy
@@ -46,6 +47,7 @@ deno deploy --prod
 deno deploy env add WITHINGS_CLIENT_ID "your_client_id"
 deno deploy env add WITHINGS_CLIENT_SECRET "your_client_secret"
 deno deploy env add WITHINGS_REDIRECT_URI "https://your-app.deno.dev/auth/callback"
+deno deploy env add ALLOWED_ORIGINS "https://example.com,https://app.example.com"  # Optional
 ```
 
 4. Update your Withings app settings with the callback URL from Deno Deploy

@@ -21,9 +21,30 @@ const MCP_ENDPOINT = "/mcp";
 export function createApp(config: ServerConfig) {
   const app = new Hono();
 
-  // Enable CORS for Claude Desktop to connect
+  // Enable CORS with security restrictions
+  // Allow native apps (no Origin header), localhost, and configured origins
   app.use("*", cors({
-    origin: "*",
+    origin: (origin) => {
+      // Allow requests with no Origin header (native apps like Claude Desktop)
+      if (!origin) {
+        return "*";
+      }
+
+      // Allow localhost for development
+      if (origin.match(/^https?:\/\/localhost(:\d+)?$/) ||
+          origin.match(/^https?:\/\/127\.0\.0\.1(:\d+)?$/)) {
+        return origin;
+      }
+
+      // Allow configured origins (comma-separated list in env var)
+      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()) || [];
+      if (allowedOrigins.includes(origin)) {
+        return origin;
+      }
+
+      // Reject all other origins
+      return null;
+    },
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "Mcp-Session-Id", "Accept"],
     exposeHeaders: ["Mcp-Session-Id", "Content-Type"],
