@@ -15,9 +15,11 @@ class TokenStore {
   }
 
   // Store MCP token -> Withings token mapping
+  // TTL: 30 days - tokens expire after this period, requiring re-authentication
   async storeTokens(mcpToken: string, tokenData: TokenData): Promise<void> {
     if (!this.kv) throw new Error("KV not initialized");
-    await this.kv.set(["tokens", mcpToken], tokenData);
+    const TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+    await this.kv.set(["tokens", mcpToken], tokenData, { expireIn: TTL_MS });
   }
 
   // Get Withings tokens by MCP token
@@ -34,7 +36,7 @@ class TokenStore {
     return Date.now() < data.expiresAt;
   }
 
-  // Update tokens after refresh (preserves the MCP token mapping)
+  // Update tokens after refresh (preserves the MCP token mapping and TTL)
   async updateTokens(mcpToken: string, updates: Partial<TokenData>): Promise<void> {
     if (!this.kv) throw new Error("KV not initialized");
     const existing = await this.getTokens(mcpToken);
@@ -45,7 +47,8 @@ class TokenStore {
       ...updates,
     };
 
-    await this.kv.set(["tokens", mcpToken], updatedData);
+    const TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+    await this.kv.set(["tokens", mcpToken], updatedData, { expireIn: TTL_MS });
   }
 
   // Delete token

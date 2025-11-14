@@ -152,6 +152,12 @@ export function createOAuthRouter(config: OAuthConfig) {
       return c.json({ error: "invalid_request", error_description: "redirect_uri is required" }, 400);
     }
 
+    // Require state parameter for CSRF protection
+    if (!state) {
+      logger.warn("OAuth authorization failed: missing state parameter");
+      return c.json({ error: "invalid_request", error_description: "state parameter is required for CSRF protection" }, 400);
+    }
+
     logger.info("Starting OAuth authorization flow");
 
     // Generate internal state for Withings OAuth
@@ -159,7 +165,7 @@ export function createOAuthRouter(config: OAuthConfig) {
 
     // Store OAuth session
     await oauthStore.storeSession(internalState, {
-      state: state || "",
+      state,
       codeChallenge,
       codeChallengeMethod,
       redirectUri,
@@ -210,12 +216,10 @@ export function createOAuthRouter(config: OAuthConfig) {
     // Clean up session
     await oauthStore.deleteSession(internalState);
 
-    // Redirect back to MCP client
+    // Redirect back to MCP client with state parameter (required for CSRF validation)
     const redirectUrl = new URL(session.redirectUri);
     redirectUrl.searchParams.append("code", authCode);
-    if (session.state) {
-      redirectUrl.searchParams.append("state", session.state);
-    }
+    redirectUrl.searchParams.append("state", session.state);
 
     return c.redirect(redirectUrl.toString());
   });
