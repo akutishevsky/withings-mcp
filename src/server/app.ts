@@ -77,6 +77,18 @@ export function createApp(config: ServerConfig) {
     maxAge: 86400,
   }));
 
+  // Root landing page
+  app.get("/", async (c) => {
+    try {
+      const html = await readFile("./public/index.html", "utf-8");
+      // Override CSP to allow inline styles for this landing page
+      c.header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'");
+      return c.html(html);
+    } catch {
+      return c.notFound();
+    }
+  });
+
   // Mount OAuth router at root level (per spec)
   app.route("/", createOAuthRouter(config.oauthConfig));
 
