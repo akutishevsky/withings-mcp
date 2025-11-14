@@ -1,6 +1,6 @@
 import { openKv } from "@deno/kv";
 
-interface TokenData {
+export interface TokenData {
   withingsAccessToken: string;
   withingsRefreshToken: string;
   withingsUserId: string;
@@ -32,6 +32,20 @@ class TokenStore {
     const data = await this.getTokens(mcpToken);
     if (!data) return false;
     return Date.now() < data.expiresAt;
+  }
+
+  // Update tokens after refresh (preserves the MCP token mapping)
+  async updateTokens(mcpToken: string, updates: Partial<TokenData>): Promise<void> {
+    if (!this.kv) throw new Error("KV not initialized");
+    const existing = await this.getTokens(mcpToken);
+    if (!existing) throw new Error("Token not found");
+
+    const updatedData: TokenData = {
+      ...existing,
+      ...updates,
+    };
+
+    await this.kv.set(["tokens", mcpToken], updatedData);
   }
 
   // Delete token

@@ -1,9 +1,17 @@
 import { tokenStore } from "../auth/token-store.js";
+import { refreshWithingsToken } from "../auth/oauth.js";
+import { getOAuthConfig } from "../config.js";
+import { createLogger } from "../utils/logger.js";
 
+const logger = createLogger({ component: "withings-api" });
 const WITHINGS_API_BASE = "https://wbsapi.withings.net";
+
+// Refresh tokens if they expire within this buffer (5 minutes)
+const EXPIRY_BUFFER_MS = 5 * 60 * 1000;
 
 /**
  * Make an authenticated request to the Withings API
+ * Automatically refreshes expired tokens
  */
 export async function makeWithingsRequest(
   mcpToken: string,
@@ -12,9 +20,44 @@ export async function makeWithingsRequest(
   additionalParams: Record<string, any> = {}
 ): Promise<any> {
   // Get Withings access token from MCP token
-  const tokenData = await tokenStore.getTokens(mcpToken);
+  let tokenData = await tokenStore.getTokens(mcpToken);
   if (!tokenData) {
     throw new Error("Invalid or expired token");
+  }
+
+  // Check if token is expired or about to expire
+  const now = Date.now();
+  const isExpiringSoon = tokenData.expiresAt - now < EXPIRY_BUFFER_MS;
+
+  if (isExpiringSoon) {
+    logger.info("Access token expired or expiring soon, refreshing");
+
+    try {
+      // Refresh the Withings token
+      const config = getOAuthConfig();
+      const refreshedTokens = await refreshWithingsToken(
+        tokenData.withingsRefreshToken,
+        config
+      );
+
+      // Update the stored tokens
+      await tokenStore.updateTokens(mcpToken, {
+        withingsAccessToken: refreshedTokens.accessToken,
+        withingsRefreshToken: refreshedTokens.refreshToken,
+        expiresAt: now + refreshedTokens.expiresIn * 1000,
+      });
+
+      // Get the updated token data
+      tokenData = await tokenStore.getTokens(mcpToken);
+      if (!tokenData) {
+        throw new Error("Failed to retrieve updated tokens");
+      }
+
+      logger.info("Token refresh successful");
+    } catch (error) {
+      logger.error("Token refresh failed", { error: String(error) });
+      throw new Error(`Failed to refresh access token: ${error}`);
+    }
   }
 
   // Build request parameters

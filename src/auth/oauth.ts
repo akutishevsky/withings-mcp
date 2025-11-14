@@ -9,7 +9,7 @@ const logger = createLogger({ component: "oauth" });
 const WITHINGS_AUTH_URL = "https://account.withings.com/oauth2_user/authorize2";
 const WITHINGS_TOKEN_URL = "https://wbsapi.withings.net/v2/oauth2";
 
-interface OAuthConfig {
+export interface OAuthConfig {
   clientId: string;
   clientSecret: string;
   redirectUri: string;
@@ -297,4 +297,49 @@ export function createOAuthRouter(config: OAuthConfig) {
   });
 
   return oauth;
+}
+
+/**
+ * Refresh Withings access token using refresh token
+ */
+export async function refreshWithingsToken(
+  refreshToken: string,
+  config: OAuthConfig
+): Promise<{
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  userId: string;
+}> {
+  logger.info("Refreshing Withings access token");
+
+  const tokenResponse = await fetch(WITHINGS_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      action: "requesttoken",
+      grant_type: "refresh_token",
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      refresh_token: refreshToken,
+    }),
+  });
+
+  const tokenData = await tokenResponse.json();
+
+  if (tokenData.status !== 0) {
+    logger.error("Withings token refresh failed");
+    throw new Error(`Failed to refresh Withings token: ${tokenData.status}`);
+  }
+
+  logger.info("Token refresh completed successfully");
+
+  return {
+    accessToken: tokenData.body.access_token,
+    refreshToken: tokenData.body.refresh_token,
+    expiresIn: tokenData.body.expires_in,
+    userId: tokenData.body.userid,
+  };
 }
