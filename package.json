@@ -7,8 +7,6 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node build/index.js",
-    "prepare": "npm run build",
     "generate-secret": "node -e \"console.log('ENCRYPTION_SECRET=' + require('crypto').randomBytes(32).toString('hex'))\""
   },
   "keywords": [
