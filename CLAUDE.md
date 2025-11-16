@@ -112,6 +112,12 @@ The server implements a **double OAuth flow** to bridge MCP clients with Withing
 - Client exchanges code at `/token` → server exchanges Withings code and returns MCP access token
 - MCP access tokens map to Withings tokens in storage
 
+**Token Lifetimes**:
+- **MCP Access Token**: Valid for 30 days (returned to Claude Desktop with `expires_in: 2592000`)
+- **Withings Access Token**: Valid for ~3 hours (automatically refreshed transparently by the server)
+- **Withings Refresh Token**: Used to obtain new Withings access tokens when they expire
+- The MCP client (Claude Desktop) only needs to re-authenticate every 30 days, while Withings tokens are refreshed automatically in the background during API calls
+
 ### MCP Transport Layer
 
 The server uses **SSE (Server-Sent Events)** for MCP communication per the specification:
@@ -138,7 +144,8 @@ Uses **Deno KV** (@deno/kv) for persistent storage:
 - Maps MCP tokens → Withings tokens (access, refresh, userId, expiry)
 - **Security**: Withings tokens encrypted at rest using AES-256-GCM (src/utils/encryption.ts)
 - Encryption key derived from `ENCRYPTION_SECRET` via PBKDF2
-- TTL: 30 days (automatic expiration)
+- **TTL**: 30 days (automatic expiration) - MCP token validity period matches this TTL
+- **Token Refresh**: Withings access tokens (~3 hour lifetime) are automatically refreshed when expired/expiring during API calls (src/withings/api.ts)
 - Prefix: `["tokens", mcpToken]`
 
 **OAuth Store** (src/auth/oauth.ts):
@@ -404,5 +411,6 @@ Tools are registered using a centralized approach:
 **API Client** (src/withings/api.ts):
 - `makeWithingsRequest()`: Generic authenticated request handler
 - Automatically maps MCP tokens to Withings tokens via token store
+- **Automatic Token Refresh**: Checks if Withings access token is expired or expiring within 5 minutes, and automatically refreshes it using the refresh token before making API calls
 - Error handling for Withings API status codes (status !== 0)
 - All requests use POST with `application/x-www-form-urlencoded` content type
