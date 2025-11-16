@@ -308,10 +308,14 @@ export function createOAuthRouter(config: OAuthConfig) {
 
       logger.info("Token exchange completed successfully");
 
+      // MCP token is valid for 30 days (matches KV TTL)
+      // Server handles refreshing Withings tokens transparently
+      const MCP_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
+
       return c.json({
         access_token: mcpToken,
         token_type: "Bearer",
-        expires_in: tokenData.body.expires_in,
+        expires_in: MCP_TOKEN_TTL_SECONDS,
       });
     } catch (error) {
       logger.error("Token exchange error", { error: String(error) });
