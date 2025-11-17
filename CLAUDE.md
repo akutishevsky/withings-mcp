@@ -266,7 +266,7 @@ Retrieves workout summaries with comprehensive metrics:
 - `offset`: Pagination offset
 - `data_fields`: Comma-separated list of fields (defaults to all fields)
 
-**Response transformation:** The `category` field is removed from workout series.
+**Response transformation:** The `category` field (workout type) and `model` field (device name) are replaced with human-readable descriptions instead of numeric IDs. For example, category `36` becomes `"Other"` and model `59` becomes `"Activite Steel HR Sport Edition"`.
 
 #### get_activity
 

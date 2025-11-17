@@ -52,6 +52,103 @@ const MEASURE_TYPE_MAP: Record<number, string> = {
 const MEASURE_TYPES_DESCRIPTION =
   "1=Weight(kg), 4=Height(meter), 5=Fat Free Mass(kg), 6=Fat Ratio(%), 8=Fat Mass Weight(kg), 9=Diastolic Blood Pressure(mmHg), 10=Systolic Blood Pressure(mmHg), 11=Heart Pulse(bpm)-only for BPM and scale devices, 12=Temperature(celsius), 54=SP02(%), 71=Body Temperature(celsius), 73=Skin Temperature(celsius), 76=Muscle Mass(kg), 77=Hydration(kg), 88=Bone Mass(kg), 91=Pulse Wave Velocity(m/s), 123=VO2 max is a numerical measurement of your body's ability to consume oxygen(ml/min/kg), 130=Atrial fibrillation result, 135=QRS interval duration based on ECG signal, 136=PR interval duration based on ECG signal, 137=QT interval duration based on ECG signal, 138=Corrected QT interval duration based on ECG signal, 139=Atrial fibrillation result from PPG, 155=Vascular age, 167=Nerve Health Score Conductance 2 electrodes Feet, 168=Extracellular Water in kg, 169=Intracellular Water in kg, 170=Visceral Fat(without unity), 173=Fat Free Mass for segments, 174=Fat Mass for segments in mass unit, 175=Muscle Mass for segments, 196=Electrodermal activity feet, 226=Basal Metabolic Rate(BMR), 227=Metabolic Age, 229=Electrochemical Skin Conductance(ESC)";
 
+// Map of workout category IDs to descriptions
+const WORKOUT_CATEGORY_MAP: Record<number, string> = {
+  1: "Walk",
+  2: "Run",
+  3: "Hiking",
+  4: "Skating",
+  5: "BMX",
+  6: "Bicycling",
+  7: "Swimming",
+  8: "Surfing",
+  9: "Kitesurfing",
+  10: "Windsurfing",
+  11: "Bodyboard",
+  12: "Tennis",
+  13: "Table tennis",
+  14: "Squash",
+  15: "Badminton",
+  16: "Lift weights",
+  17: "Fitness",
+  18: "Elliptical",
+  19: "Pilates",
+  20: "Basket-ball",
+  21: "Soccer",
+  22: "Football",
+  23: "Rugby",
+  24: "Volley-ball",
+  25: "Waterpolo",
+  26: "Horse riding",
+  27: "Golf",
+  28: "Yoga",
+  29: "Dancing",
+  30: "Boxing",
+  31: "Fencing",
+  32: "Wrestling",
+  33: "Martial arts",
+  34: "Skiing",
+  35: "Snowboarding",
+  36: "Other",
+  128: "No activity",
+  187: "Rowing",
+  188: "Zumba",
+  191: "Baseball",
+  192: "Handball",
+  193: "Hockey",
+  194: "Ice hockey",
+  195: "Climbing",
+  196: "Ice skating",
+  272: "Multi-sport",
+  306: "Indoor walk",
+  307: "Indoor running",
+  308: "Indoor cycling",
+};
+
+// Map of device model IDs to device names
+const DEVICE_MODEL_MAP: Record<number, string> = {
+  1: "Withings WBS01",
+  2: "Withings WBS03",
+  3: "Kid Scale",
+  4: "Withings WBS02",
+  5: "Body+",
+  6: "Body Cardio",
+  7: "Body",
+  13: "Body+",
+  21: "Smart Baby Monitor",
+  22: "Withings Home",
+  41: "Withings Blood Pressure V1",
+  42: "Withings Blood Pressure V2",
+  43: "Withings Blood Pressure V3",
+  44: "BPM Core",
+  45: "BPM Connect",
+  51: "Pulse",
+  52: "Activite",
+  53: "Activite (Pop, Steel)",
+  54: "Withings Go",
+  55: "Activite Steel HR",
+  58: "Pulse HR",
+  59: "Activite Steel HR Sport Edition",
+  60: "Aura dock",
+  61: "Aura sensor",
+  62: "Aura dock",
+  63: "Sleep sensor",
+  70: "Thermo",
+  91: "Move ECG",
+  92: "Move ECG",
+  1051: "iOS step tracker",
+  1052: "iOS step tracker",
+  1053: "Android step tracker",
+  1054: "Android step tracker",
+  1055: "GoogleFit tracker",
+  1056: "Samsung Health tracker",
+  1057: "HealthKit step iPhone tracker",
+  1058: "HealthKit step Apple Watch tracker",
+  1059: "HealthKit other step tracker",
+  1060: "Android step tracker",
+  1062: "Huawei tracker",
+};
+
 export function registerMeasureTools(server: any, mcpAccessToken: string) {
   // Register get_measures tool
   server.registerTool(
@@ -216,11 +313,24 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           args.data_fields
         );
 
-        // Remove category field from each workout in the series
+        // Replace category and model field values with descriptions
         if (workouts?.series) {
           workouts.series = workouts.series.map((workout: any) => {
-            const { category, ...rest } = workout;
-            return rest;
+            const updatedWorkout = { ...workout };
+
+            // Replace category ID with description
+            if (typeof updatedWorkout.category === "number") {
+              updatedWorkout.category = WORKOUT_CATEGORY_MAP[updatedWorkout.category]
+                || `Unknown category ${updatedWorkout.category}`;
+            }
+
+            // Replace model ID with device name
+            if (typeof updatedWorkout.model === "number") {
+              updatedWorkout.model = DEVICE_MODEL_MAP[updatedWorkout.model]
+                || `Unknown model ${updatedWorkout.model}`;
+            }
+
+            return updatedWorkout;
           });
         }
 
