@@ -59,10 +59,11 @@ class TokenStore {
   }
 
   // Check if MCP token is valid
+  // MCP token validity is determined by KV TTL (30 days)
+  // The expiresAt field tracks Withings token expiration for refresh purposes only
   async isValid(mcpToken: string): Promise<boolean> {
     const data = await this.getTokens(mcpToken);
-    if (!data) return false;
-    return Date.now() < data.expiresAt;
+    return data !== null; // If entry exists in KV, MCP token is valid (KV TTL handles expiration)
   }
 
   // Update tokens after refresh (preserves the MCP token mapping and TTL, re-encrypts)
