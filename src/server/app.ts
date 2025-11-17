@@ -131,8 +131,15 @@ export function createApp(config: ServerConfig) {
   });
 
   // Health check endpoint
-  app.get("/health", (c) => {
-    return c.json({ status: "ok" });
+  app.get("/health", async (c) => {
+    try {
+      const html = await readFile("./public/health.html", "utf-8");
+      // Override CSP to allow inline styles and Google Analytics script
+      c.header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline' https://www.googletagmanager.com; connect-src https://www.google-analytics.com; frame-ancestors 'none'");
+      return c.html(html);
+    } catch {
+      return c.notFound();
+    }
   });
 
   // Error handler - sanitize error messages to avoid leaking internal details
