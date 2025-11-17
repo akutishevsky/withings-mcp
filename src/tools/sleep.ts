@@ -18,10 +18,14 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
       inputSchema: {
         startdate: z
           .number()
-          .describe("Sleep period start date as Unix timestamp (required)."),
+          .describe(
+            "Sleep period start date as Unix timestamp (seconds since epoch). IMPORTANT: Convert dates carefully - use new Date('YYYY-MM-DD').getTime()/1000 or Date.UTC(year, month-1, day)/1000."
+          ),
         enddate: z
           .number()
-          .describe("Sleep period end date as Unix timestamp (required)."),
+          .describe(
+            "Sleep period end date as Unix timestamp (seconds since epoch). IMPORTANT: Convert dates carefully. Note: Maximum 24h range from startdate."
+          ),
         data_fields: z
           .string()
           .optional()
@@ -91,7 +95,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
           .number()
           .optional()
           .describe(
-            "Unix timestamp for requesting data updated or created after this date. Use this instead of date range for synchronization."
+            "Unix timestamp (seconds since epoch) for requesting data updated or created after this date. Use this instead of date range for synchronization. IMPORTANT: Convert dates carefully."
           ),
         data_fields: z
           .string()

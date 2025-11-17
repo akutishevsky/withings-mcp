@@ -16,11 +16,15 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
         startdate: z
           .number()
           .optional()
-          .describe("Start date as Unix timestamp. Optional."),
+          .describe(
+            "Start date as Unix timestamp (seconds since epoch). IMPORTANT: Convert dates carefully - use new Date('YYYY-MM-DD').getTime()/1000 or Date.UTC(year, month-1, day)/1000."
+          ),
         enddate: z
           .number()
           .optional()
-          .describe("End date as Unix timestamp. Optional."),
+          .describe(
+            "End date as Unix timestamp (seconds since epoch). IMPORTANT: Convert dates carefully."
+          ),
         offset: z
           .number()
           .optional()

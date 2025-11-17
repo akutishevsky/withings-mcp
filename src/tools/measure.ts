@@ -75,8 +75,15 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
         startdate: z
           .number()
           .optional()
-          .describe("Start date as Unix timestamp"),
-        enddate: z.number().optional().describe("End date as Unix timestamp"),
+          .describe(
+            "Start date as Unix timestamp (seconds since epoch). IMPORTANT: Convert dates carefully - use new Date('YYYY-MM-DD').getTime()/1000 or Date.UTC(year, month-1, day)/1000. Example: Nov 1, 2025 = 1730419200"
+          ),
+        enddate: z
+          .number()
+          .optional()
+          .describe(
+            "End date as Unix timestamp (seconds since epoch). IMPORTANT: Convert dates carefully - use new Date('YYYY-MM-DD').getTime()/1000 or Date.UTC(year, month-1, day)/1000. Example: Nov 30, 2025 = 1733011199"
+          ),
         lastupdate: z
           .number()
           .optional()
@@ -105,14 +112,17 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
         );
 
         // Add type descriptions and calculated values to each measure
+        // Remove deprecated fields (algo, fm)
         if (measures?.measuregrps) {
           measures.measuregrps = measures.measuregrps.map((grp: any) => {
             if (grp.measures) {
               grp.measures = grp.measures.map((measure: any) => {
                 const calculatedValue =
                   measure.value * Math.pow(10, measure.unit);
+                // Destructure to remove deprecated fields
+                const { algo, fm, ...cleanMeasure } = measure;
                 return {
-                  ...measure,
+                  ...cleanMeasure,
                   type_description:
                     MEASURE_TYPE_MAP[measure.type] ||
                     `Unknown type ${measure.type}`,
@@ -175,7 +185,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           .number()
           .optional()
           .describe(
-            "Unix timestamp for requesting data updated or created after this date. Use this instead of date range for synchronization."
+            "Unix timestamp (seconds since epoch) for requesting data updated or created after this date. Use this instead of date range for synchronization. IMPORTANT: Convert dates carefully."
           ),
         offset: z
           .number()
@@ -265,7 +275,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           .number()
           .optional()
           .describe(
-            "Unix timestamp for requesting data updated or created after this date. Use this instead of date range for synchronization."
+            "Unix timestamp (seconds since epoch) for requesting data updated or created after this date. Use this instead of date range for synchronization. IMPORTANT: Convert dates carefully."
           ),
         offset: z
           .number()
@@ -332,13 +342,13 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           .number()
           .optional()
           .describe(
-            "Start date as Unix timestamp. Optional - if not provided, returns most recent data."
+            "Start date as Unix timestamp (seconds since epoch). Optional - if not provided, returns most recent data. IMPORTANT: Convert dates carefully - use new Date('YYYY-MM-DD').getTime()/1000 or Date.UTC(year, month-1, day)/1000."
           ),
         enddate: z
           .number()
           .optional()
           .describe(
-            "End date as Unix timestamp. Optional - if not provided, returns most recent data. Note: Maximum 24h range from startdate."
+            "End date as Unix timestamp (seconds since epoch). Optional - if not provided, returns most recent data. Note: Maximum 24h range from startdate. IMPORTANT: Convert dates carefully."
           ),
         data_fields: z
           .string()
