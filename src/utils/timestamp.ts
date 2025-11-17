@@ -19,7 +19,7 @@ const TIMESTAMP_FIELDS = [
 ];
 
 /**
- * Converts a Unix timestamp to an ISO 8601 datetime string with timezone
+ * Converts a Unix timestamp to an ISO 8601 datetime string in UTC
  * @param timestamp Unix timestamp (seconds since epoch)
  * @returns ISO 8601 formatted datetime string (e.g., "2024-01-15T10:30:00.000Z")
  */
@@ -28,15 +28,58 @@ export function formatTimestamp(timestamp: number): string {
 }
 
 /**
- * Recursively processes an object and adds human-readable datetime fields
- * for all Unix timestamp fields. Original timestamp values are preserved.
+ * Converts a Unix timestamp to a localized datetime string in the specified timezone
+ * @param timestamp Unix timestamp (seconds since epoch)
+ * @param timezone IANA timezone string (e.g., "Europe/Paris", "America/New_York")
+ * @returns Localized datetime string (e.g., "2024-01-15 11:30:00 Europe/Paris")
+ */
+export function formatTimestampWithTimezone(
+  timestamp: number,
+  timezone: string
+): string {
+  try {
+    const date = new Date(timestamp * 1000);
+
+    // Format the date in the specified timezone
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+
+    const parts = formatter.formatToParts(date);
+    const dateParts: Record<string, string> = {};
+
+    for (const part of parts) {
+      if (part.type !== "literal") {
+        dateParts[part.type] = part.value;
+      }
+    }
+
+    // Build formatted string: YYYY-MM-DD HH:MM:SS timezone
+    return `${dateParts.year}-${dateParts.month}-${dateParts.day} ${dateParts.hour}:${dateParts.minute}:${dateParts.second} ${timezone}`;
+  } catch (error) {
+    // If timezone is invalid or conversion fails, fall back to UTC
+    return formatTimestamp(timestamp);
+  }
+}
+
+/**
+ * Recursively processes an object and converts Unix timestamp fields to
+ * human-readable datetime strings. If a timezone field is present in the
+ * same object, timestamps are converted to that timezone. Otherwise, UTC is used.
  *
- * For each timestamp field (e.g., "startdate"), adds a corresponding
- * field with "_readable" suffix (e.g., "startdate_readable") containing
- * the ISO 8601 formatted datetime string.
+ * For each timestamp field (e.g., "startdate"), the Unix timestamp is replaced
+ * with a localized datetime string (e.g., "2024-01-15 11:30:00 Europe/Paris")
+ * or UTC ISO 8601 string if no timezone is available.
  *
  * @param obj The object to process (can be nested)
- * @returns The processed object with added readable datetime fields
+ * @returns The processed object with timestamps replaced by readable datetime strings
  */
 export function addReadableTimestamps(obj: any): any {
   if (obj === null || obj === undefined) {
@@ -52,17 +95,29 @@ export function addReadableTimestamps(obj: any): any {
   if (typeof obj === "object") {
     const processed: any = {};
 
-    for (const [key, value] of Object.entries(obj)) {
-      // Keep original value
-      processed[key] = addReadableTimestamps(value);
+    // First pass: collect timezone if present
+    let timezone: string | undefined;
+    if (typeof obj.timezone === "string" && obj.timezone.length > 0) {
+      timezone = obj.timezone;
+    }
 
-      // Add readable datetime field if this is a timestamp field
+    // Second pass: process all fields
+    for (const [key, value] of Object.entries(obj)) {
+      // Check if this is a timestamp field
       if (
         TIMESTAMP_FIELDS.includes(key) &&
         typeof value === "number" &&
         value > 0
       ) {
-        processed[`${key}_readable`] = formatTimestamp(value);
+        // Replace timestamp with localized datetime string
+        if (timezone) {
+          processed[key] = formatTimestampWithTimezone(value, timezone);
+        } else {
+          processed[key] = formatTimestamp(value);
+        }
+      } else {
+        // Recursively process nested objects/arrays
+        processed[key] = addReadableTimestamps(value);
       }
     }
 
@@ -76,30 +131,36 @@ export function addReadableTimestamps(obj: any): any {
 /**
  * Special handling for night_events field in sleep data which contains
  * a dictionary where keys are event types and values are timestamp arrays.
- * Adds a "_readable" version with ISO datetime strings.
+ * Replaces timestamp values with localized datetime strings.
  *
- * @param nightEvents The night_events object from sleep summary
- * @returns Processed object with night_events_readable added
+ * @param sleepData The sleep summary object containing night_events
+ * @returns Processed object with night_events timestamps converted to datetime strings
  */
 export function addReadableNightEvents(sleepData: any): any {
   if (!sleepData || !sleepData.night_events) {
     return sleepData;
   }
 
-  const nightEventsReadable: any = {};
+  // Check if timezone is available in sleep data
+  const timezone =
+    typeof sleepData.timezone === "string" && sleepData.timezone.length > 0
+      ? sleepData.timezone
+      : undefined;
+
+  const processedNightEvents: any = {};
 
   for (const [eventType, timestamps] of Object.entries(
     sleepData.night_events
   )) {
     if (Array.isArray(timestamps)) {
-      nightEventsReadable[eventType] = timestamps.map((ts: number) =>
-        formatTimestamp(ts)
+      processedNightEvents[eventType] = timestamps.map((ts: number) =>
+        timezone ? formatTimestampWithTimezone(ts, timezone) : formatTimestamp(ts)
       );
     }
   }
 
   return {
     ...sleepData,
-    night_events_readable: nightEventsReadable,
+    night_events: processedNightEvents,
   };
 }

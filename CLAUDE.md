@@ -54,7 +54,8 @@ src/
 │   └── api.ts               # Withings API client & request handling
 ├── utils/                    # Utilities
 │   ├── logger.ts            # Privacy-safe custom logger for Deno Deploy
-│   └── encryption.ts        # AES-256-GCM encryption for sensitive tokens
+│   ├── encryption.ts        # AES-256-GCM encryption for sensitive tokens
+│   └── timestamp.ts         # Timezone-aware timestamp conversion utilities
 └── index.ts                 # Main entry point (initializes stores & creates app)
 ```
 
@@ -97,6 +98,45 @@ Each module creates a child logger with context:
 - `component: "tools:heart"` - Heart tool invocations
 - `component: "tools:stetho"` - Stetho tool invocations
 - `component: "transport"` - Transport and session management
+
+### Timezone-Aware Timestamp Conversion
+
+The server automatically converts Unix timestamps to human-readable datetime strings using timezone information from the Withings API (src/utils/timestamp.ts):
+
+**Conversion Behavior:**
+- **With timezone field**: Timestamps are converted to localized datetime in the format `"2024-01-15 12:30:00 Europe/Paris"`
+- **Without timezone field**: Timestamps fall back to UTC ISO 8601 format `"2024-01-15T11:30:00.000Z"`
+- Original Unix timestamp values are **replaced** with readable datetime strings in tool responses
+
+**Timestamp Fields Converted:**
+`startdate`, `enddate`, `date`, `created`, `modified`, `timestamp`, `first_session_date`, `last_session_date`, `birthdate`, `lastupdate`
+
+**Special Handling:**
+- **night_events** in sleep data: Array of timestamps converted to localized datetime strings
+- **Nested objects**: Recursively processes all nested timestamp fields
+
+**Example Transformation:**
+```javascript
+// Input (from Withings API)
+{
+  "timezone": "Europe/Paris",
+  "startdate": 1705318200,
+  "enddate": 1705347000
+}
+
+// Output (returned to MCP client)
+{
+  "timezone": "Europe/Paris",
+  "startdate": "2024-01-15 12:30:00 Europe/Paris",
+  "enddate": "2024-01-15 20:30:00 Europe/Paris"
+}
+```
+
+**Implementation:**
+- `formatTimestamp()`: Converts to UTC ISO 8601
+- `formatTimestampWithTimezone()`: Converts to localized datetime using Intl.DateTimeFormat
+- `addReadableTimestamps()`: Recursively processes objects and replaces timestamp fields
+- `addReadableNightEvents()`: Special handler for sleep data night_events arrays
 
 ### OAuth 2.0 Flow Architecture
 
