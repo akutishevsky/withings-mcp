@@ -43,7 +43,7 @@ src/
 │   └── rate-limiter.ts      # Rate limiting middleware using Deno KV
 ├── tools/                    # MCP tools organized by Withings API category
 │   ├── index.ts             # Registers all tools on MCP server instances
-│   ├── sleep.ts             # Sleep API: get_sleep_summary
+│   ├── sleep.ts             # Sleep API: get_sleep, get_sleep_summary
 │   ├── measure.ts           # Measure API: get_measures, get_workouts, get_activity, get_intraday_activity
 │   ├── user.ts              # User API: get_user_devices, get_user_goals
 │   ├── heart.ts             # Heart API: list_heart_records, get_heart_signal
@@ -99,9 +99,25 @@ Each module creates a child logger with context:
 - `component: "tools:stetho"` - Stetho tool invocations
 - `component: "transport"` - Transport and session management
 
-### Timezone-Aware Timestamp Conversion
+### Date and Timestamp Handling
 
-The server automatically converts Unix timestamps to human-readable datetime strings using timezone information from the Withings API (src/utils/timestamp.ts):
+The server provides bidirectional date/timestamp conversion utilities (src/utils/timestamp.ts):
+
+#### Input: YYYY-MM-DD → Unix Timestamp
+
+MCP tools accept dates in human-readable YYYY-MM-DD format (e.g., "2025-11-17") which are automatically converted to Unix timestamps before calling the Withings API.
+
+**Function:** `dateToUnixTimestamp(dateString: string): number`
+- Accepts: YYYY-MM-DD format (e.g., "2025-11-17")
+- Returns: Unix timestamp in seconds since epoch (midnight UTC)
+- Validates: Format, month (1-12), day (1-31), and date validity
+- Throws: Clear errors for invalid dates
+
+**Used by:** Tools that accept date parameters (`get_sleep`, `get_measures`, `get_intraday_activity`, `list_heart_records`, `list_stetho_records`)
+
+#### Output: Unix Timestamp → Timezone-Aware Datetime
+
+The server automatically converts Unix timestamps in API responses to human-readable datetime strings using timezone information from the Withings API.
 
 **Conversion Behavior:**
 - **With timezone field**: Timestamps are converted to localized datetime in the format `"2024-01-15 12:30:00 Europe/Paris"`
@@ -132,7 +148,8 @@ The server automatically converts Unix timestamps to human-readable datetime str
 }
 ```
 
-**Implementation:**
+**Implementation Functions:**
+- `dateToUnixTimestamp()`: Converts YYYY-MM-DD to Unix timestamp
 - `formatTimestamp()`: Converts to UTC ISO 8601
 - `formatTimestampWithTimezone()`: Converts to localized datetime using Intl.DateTimeFormat
 - `addReadableTimestamps()`: Recursively processes objects and replaces timestamp fields
@@ -210,9 +227,22 @@ See `.env.example` for template.
 
 ## MCP Tools
 
-The server implements 11 MCP tools for accessing Withings health data, organized by Withings API category. All tools are registered via `registerAllTools()` (src/tools/index.ts) on per-session `McpServer` instances to ensure proper session isolation.
+The server implements 12 MCP tools for accessing Withings health data, organized by Withings API category. All tools are registered via `registerAllTools()` (src/tools/index.ts) on per-session `McpServer` instances to ensure proper session isolation.
+
+**Date Parameters:** All tools that accept date parameters use YYYY-MM-DD format (e.g., "2025-11-17"). The server automatically converts these to Unix timestamps before calling the Withings API.
 
 ### Sleep Tools (src/tools/sleep.ts)
+
+#### get_sleep
+
+Retrieves high-frequency sleep data captured during sleep, including sleep stages and health metrics at minute-level resolution.
+
+**Parameters:**
+- `startdate`: Start date (YYYY-MM-DD format, e.g., '2025-11-17')
+- `enddate`: End date (YYYY-MM-DD format, max 24h range from startdate)
+- `data_fields`: Optional comma-separated list of specific fields
+
+**Note:** If startdate and enddate are separated by more than 24h, only the first 24h after startdate will be returned.
 
 #### get_sleep_summary
 
@@ -244,8 +274,9 @@ Retrieves health measures with automatic type descriptions and calculated values
 **Parameters:**
 - `meastype`: Single measure type ID
 - `meastypes`: Comma-separated list of measure type IDs
-- `startdate`/`enddate`: Unix timestamps for date range
-- `lastupdate`: Unix timestamp for sync
+- `startdate`: Start date (YYYY-MM-DD format, e.g., '2025-11-01')
+- `enddate`: End date (YYYY-MM-DD format, e.g., '2025-11-30')
+- `lastupdate`: Unix timestamp for sync (alternative to date range)
 - `offset`: Pagination offset
 
 **Response enhancement:** Each measure includes `type_description` and `calculated_value` fields added by the server.
@@ -293,8 +324,8 @@ Retrieves high-frequency intraday activity data captured throughout the day:
 - HRV metrics (RMSSD, SDNN1, quality score)
 
 **Parameters:**
-- `startdate`: Unix timestamp (optional)
-- `enddate`: Unix timestamp (optional, max 24h from startdate)
+- `startdate`: Start date (YYYY-MM-DD format, e.g., '2025-11-17', optional)
+- `enddate`: End date (YYYY-MM-DD format, optional, max 24h from startdate)
 - `data_fields`: Optional comma-separated list of specific fields
 
 **Note:** If no dates provided, returns most recent data. Maximum 24-hour range.
@@ -335,8 +366,8 @@ Retrieves list of ECG (electrocardiogram) recordings:
 - Blood pressure measurements (if taken with BPM Core)
 
 **Parameters:**
-- `startdate`: Unix timestamp (optional)
-- `enddate`: Unix timestamp (optional)
+- `startdate`: Start date (YYYY-MM-DD format, e.g., '2025-11-01', optional)
+- `enddate`: End date (YYYY-MM-DD format, e.g., '2025-11-30', optional)
 - `offset`: Pagination offset (optional)
 
 #### get_heart_signal
@@ -364,8 +395,8 @@ Retrieves list of stethoscope recordings:
 - Timezone information
 
 **Parameters:**
-- `startdate`: Unix timestamp (optional)
-- `enddate`: Unix timestamp (optional)
+- `startdate`: Start date (YYYY-MM-DD format, e.g., '2025-11-01', optional)
+- `enddate`: End date (YYYY-MM-DD format, e.g., '2025-11-30', optional)
 - `offset`: Pagination offset (optional)
 
 #### get_stetho_signal
@@ -393,7 +424,7 @@ To add new Withings API tools:
 5. Add a component logger entry (e.g., `component: "tools:newcategory"`)
 
 Implemented tool categories:
-- Sleep API (sleep summary data)
+- Sleep API (high-frequency sleep data, sleep summary data)
 - Measure API (health measures, workouts, activities)
 - User API (devices, goals)
 - Heart API (ECG recordings and signals)

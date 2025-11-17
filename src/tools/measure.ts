@@ -170,16 +170,16 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
             `Comma-separated list of measure type IDs (e.g., '1,9,10' for weight and blood pressure). Available types: ${MEASURE_TYPES_DESCRIPTION}`
           ),
         startdate: z
-          .number()
+          .string()
           .optional()
           .describe(
-            "Start date as Unix timestamp (seconds since epoch). IMPORTANT: Convert dates carefully - use new Date('YYYY-MM-DD').getTime()/1000 or Date.UTC(year, month-1, day)/1000. Example: Nov 1, 2025 = 1730419200"
+            "Start date in YYYY-MM-DD format (e.g., '2025-11-01'). The date represents midnight UTC of that day."
           ),
         enddate: z
-          .number()
+          .string()
           .optional()
           .describe(
-            "End date as Unix timestamp (seconds since epoch). IMPORTANT: Convert dates carefully - use new Date('YYYY-MM-DD').getTime()/1000 or Date.UTC(year, month-1, day)/1000. Example: Nov 30, 2025 = 1733011199"
+            "End date in YYYY-MM-DD format (e.g., '2025-11-30')."
           ),
         lastupdate: z
           .number()
@@ -449,16 +449,16 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
         "Get high-frequency intraday activity data captured throughout the day. Returns time-series data with timestamps. Note: If startdate and enddate are separated by more than 24h, only the first 24h after startdate will be returned. If no dates provided, returns most recent activity data.",
       inputSchema: {
         startdate: z
-          .number()
+          .string()
           .optional()
           .describe(
-            "Start date as Unix timestamp (seconds since epoch). Optional - if not provided, returns most recent data. IMPORTANT: Convert dates carefully - use new Date('YYYY-MM-DD').getTime()/1000 or Date.UTC(year, month-1, day)/1000."
+            "Start date in YYYY-MM-DD format (e.g., '2025-11-17'). Optional - if not provided, returns most recent data. The date represents midnight UTC of that day."
           ),
         enddate: z
-          .number()
+          .string()
           .optional()
           .describe(
-            "End date as Unix timestamp (seconds since epoch). Optional - if not provided, returns most recent data. Note: Maximum 24h range from startdate. IMPORTANT: Convert dates carefully."
+            "End date in YYYY-MM-DD format (e.g., '2025-11-18'). Optional - if not provided, returns most recent data. Note: Maximum 24h range from startdate."
           ),
         data_fields: z
           .string()

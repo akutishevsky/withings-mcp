@@ -14,16 +14,16 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
         "Get a list of ECG (electrocardiogram) records with Afib (atrial fibrillation) classification for a given time period. Returns ECG metadata including signal IDs, timestamps, heart rate, Afib detection results, and blood pressure measurements (if taken with BPM Core). Use the signal ID from this list with get_heart_signal to retrieve the full ECG waveform data.",
       inputSchema: {
         startdate: z
-          .number()
+          .string()
           .optional()
           .describe(
-            "Start date as Unix timestamp (seconds since epoch). IMPORTANT: Convert dates carefully - use new Date('YYYY-MM-DD').getTime()/1000 or Date.UTC(year, month-1, day)/1000."
+            "Start date in YYYY-MM-DD format (e.g., '2025-11-01'). The date represents midnight UTC of that day."
           ),
         enddate: z
-          .number()
+          .string()
           .optional()
           .describe(
-            "End date as Unix timestamp (seconds since epoch). IMPORTANT: Convert dates carefully."
+            "End date in YYYY-MM-DD format (e.g., '2025-11-30')."
           ),
         offset: z
           .number()

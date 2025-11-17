@@ -17,14 +17,14 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
         "Get high-frequency sleep data captured during sleep, including sleep stages and health metrics at minute-level resolution. Use this for detailed analysis of sleep patterns. For aggregated summaries, use get_sleep_summary instead. Note: If startdate and enddate are separated by more than 24h, only the first 24h after startdate will be returned.",
       inputSchema: {
         startdate: z
-          .number()
+          .string()
           .describe(
-            "Sleep period start date as Unix timestamp (seconds since epoch). IMPORTANT: Convert dates carefully - use new Date('YYYY-MM-DD').getTime()/1000 or Date.UTC(year, month-1, day)/1000."
+            "Sleep period start date in YYYY-MM-DD format (e.g., '2025-11-17'). The date represents midnight UTC of that day."
           ),
         enddate: z
-          .number()
+          .string()
           .describe(
-            "Sleep period end date as Unix timestamp (seconds since epoch). IMPORTANT: Convert dates carefully. Note: Maximum 24h range from startdate."
+            "Sleep period end date in YYYY-MM-DD format (e.g., '2025-11-18'). Note: Maximum 24h range from startdate."
           ),
         data_fields: z
           .string()

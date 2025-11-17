@@ -2,6 +2,7 @@ import { tokenStore } from "../auth/token-store.js";
 import { refreshWithingsToken } from "../auth/oauth.js";
 import { getOAuthConfig } from "../config.js";
 import { createLogger } from "../utils/logger.js";
+import { dateToUnixTimestamp } from "../utils/timestamp.js";
 
 const logger = createLogger({ component: "withings-api" });
 const WITHINGS_API_BASE = "https://wbsapi.withings.net";
@@ -109,13 +110,13 @@ export async function makeWithingsRequest(
  */
 export async function getSleep(
   mcpToken: string,
-  startDate: number,
-  endDate: number,
+  startDate: string,
+  endDate: string,
   dataFields?: string
 ): Promise<any> {
   const params: Record<string, any> = {
-    startdate: startDate,
-    enddate: endDate,
+    startdate: dateToUnixTimestamp(startDate),
+    enddate: dateToUnixTimestamp(endDate),
   };
 
   if (dataFields) {
@@ -160,8 +161,8 @@ export async function getMeasures(
   mcpToken: string,
   meastype?: number,
   meastypes?: string,
-  startdate?: number,
-  enddate?: number,
+  startdate?: string,
+  enddate?: string,
   lastupdate?: number,
   offset?: number
 ): Promise<any> {
@@ -176,11 +177,11 @@ export async function getMeasures(
   }
 
   if (startdate !== undefined) {
-    params.startdate = startdate;
+    params.startdate = dateToUnixTimestamp(startdate);
   }
 
   if (enddate !== undefined) {
-    params.enddate = enddate;
+    params.enddate = dateToUnixTimestamp(enddate);
   }
 
   if (lastupdate !== undefined) {
@@ -266,18 +267,18 @@ export async function getActivity(
  */
 export async function getIntradayActivity(
   mcpToken: string,
-  startDate?: number,
-  endDate?: number,
+  startDate?: string,
+  endDate?: string,
   dataFields?: string
 ): Promise<any> {
   const params: Record<string, any> = {};
 
   if (startDate !== undefined) {
-    params.startdate = startDate;
+    params.startdate = dateToUnixTimestamp(startDate);
   }
 
   if (endDate !== undefined) {
-    params.enddate = endDate;
+    params.enddate = dateToUnixTimestamp(endDate);
   }
 
   if (dataFields) {
@@ -306,18 +307,18 @@ export async function getUserGoals(mcpToken: string): Promise<any> {
  */
 export async function listHeartRecords(
   mcpToken: string,
-  startDate?: number,
-  endDate?: number,
+  startDate?: string,
+  endDate?: string,
   offset?: number
 ): Promise<any> {
   const params: Record<string, any> = {};
 
   if (startDate !== undefined) {
-    params.startdate = startDate;
+    params.startdate = dateToUnixTimestamp(startDate);
   }
 
   if (endDate !== undefined) {
-    params.enddate = endDate;
+    params.enddate = dateToUnixTimestamp(endDate);
   }
 
   if (offset !== undefined) {
@@ -356,18 +357,18 @@ export async function getHeartSignal(
  */
 export async function listStethoRecords(
   mcpToken: string,
-  startDate?: number,
-  endDate?: number,
+  startDate?: string,
+  endDate?: string,
   offset?: number
 ): Promise<any> {
   const params: Record<string, any> = {};
 
   if (startDate !== undefined) {
-    params.startdate = startDate;
+    params.startdate = dateToUnixTimestamp(startDate);
   }
 
   if (endDate !== undefined) {
-    params.enddate = endDate;
+    params.enddate = dateToUnixTimestamp(endDate);
   }
 
   if (offset !== undefined) {

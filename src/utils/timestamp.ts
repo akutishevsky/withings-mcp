@@ -1,5 +1,5 @@
 /**
- * Utility functions for converting Unix timestamps to human-readable datetime strings
+ * Utility functions for converting between Unix timestamps and human-readable datetime strings
  */
 
 /**
@@ -17,6 +17,44 @@ const TIMESTAMP_FIELDS = [
   "birthdate",
   "lastupdate",
 ];
+
+/**
+ * Converts a date string in YYYY-MM-DD format to a Unix timestamp (seconds since epoch)
+ * The timestamp represents the start of the day in UTC (00:00:00)
+ *
+ * @param dateString Date string in YYYY-MM-DD format (e.g., "2025-11-17")
+ * @returns Unix timestamp in seconds since epoch
+ * @throws Error if the date string is invalid or in wrong format
+ */
+export function dateToUnixTimestamp(dateString: string): number {
+  // Validate format YYYY-MM-DD
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(dateString)) {
+    throw new Error(`Invalid date format: ${dateString}. Expected YYYY-MM-DD format.`);
+  }
+
+  const [year, month, day] = dateString.split('-').map(Number);
+
+  // Validate date components
+  if (month < 1 || month > 12) {
+    throw new Error(`Invalid month: ${month}. Must be between 1 and 12.`);
+  }
+
+  if (day < 1 || day > 31) {
+    throw new Error(`Invalid day: ${day}. Must be between 1 and 31.`);
+  }
+
+  // Create UTC date at midnight (00:00:00)
+  const date = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+
+  // Check if the date is valid
+  if (isNaN(date.getTime())) {
+    throw new Error(`Invalid date: ${dateString}`);
+  }
+
+  // Return Unix timestamp in seconds
+  return Math.floor(date.getTime() / 1000);
+}
 
 /**
  * Converts a Unix timestamp to an ISO 8601 datetime string in UTC

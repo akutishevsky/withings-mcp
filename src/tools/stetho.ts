@@ -14,16 +14,16 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
         "Get a list of stethoscope recordings for a given time period. Returns metadata including signal IDs, timestamps, device IDs, valve heart disease (VHD) indicators, and timezone information. Use the signal ID from this list with get_stetho_signal to retrieve the full audio signal data.",
       inputSchema: {
         startdate: z
-          .number()
+          .string()
           .optional()
           .describe(
-            "Start date as Unix timestamp (seconds since epoch). IMPORTANT: Convert dates carefully - use new Date('YYYY-MM-DD').getTime()/1000 or Date.UTC(year, month-1, day)/1000."
+            "Start date in YYYY-MM-DD format (e.g., '2025-11-01'). The date represents midnight UTC of that day."
           ),
         enddate: z
-          .number()
+          .string()
           .optional()
           .describe(
-            "End date as Unix timestamp (seconds since epoch). IMPORTANT: Convert dates carefully."
+            "End date in YYYY-MM-DD format (e.g., '2025-11-30')."
           ),
         offset: z
           .number()
