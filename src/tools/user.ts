@@ -1,8 +1,6 @@
 import { getUserDevices, getUserGoals } from "../withings/api.js";
-import { createLogger } from "../utils/logger.js";
 import { addReadableTimestamps } from "../utils/timestamp.js";
-
-const logger = createLogger({ component: "tools:user" });
+import { withAnalytics } from "./index.js";
 
 export function registerUserTools(server: any, mcpAccessToken: string) {
   // Register get_user_devices tool
@@ -14,35 +12,25 @@ export function registerUserTools(server: any, mcpAccessToken: string) {
       inputSchema: {},
     },
     async () => {
-      logger.info("Tool invoked: get_user_devices");
-      try {
-        const devices = await getUserDevices(mcpAccessToken);
+      return withAnalytics(
+        "get_user_devices",
+        async () => {
+          const devices = await getUserDevices(mcpAccessToken);
 
-        // Add readable datetime fields for timestamps
-        const processedData = addReadableTimestamps(devices);
+          // Add readable datetime fields for timestamps
+          const processedData = addReadableTimestamps(devices);
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(processedData, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        logger.error("Tool error: get_user_devices");
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-          isError: true,
-        };
-      }
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(processedData, null, 2),
+              },
+            ],
+          };
+        },
+        { mcpAccessToken }
+      );
     }
   );
 
@@ -55,32 +43,22 @@ export function registerUserTools(server: any, mcpAccessToken: string) {
       inputSchema: {},
     },
     async () => {
-      logger.info("Tool invoked: get_user_goals");
-      try {
-        const goals = await getUserGoals(mcpAccessToken);
+      return withAnalytics(
+        "get_user_goals",
+        async () => {
+          const goals = await getUserGoals(mcpAccessToken);
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(goals, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        logger.error("Tool error: get_user_goals");
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-          isError: true,
-        };
-      }
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(goals, null, 2),
+              },
+            ],
+          };
+        },
+        { mcpAccessToken }
+      );
     }
   );
 }

@@ -1,9 +1,7 @@
 import { z } from "zod";
 import { listHeartRecords, getHeartSignal } from "../withings/api.js";
-import { createLogger } from "../utils/logger.js";
 import { addReadableTimestamps } from "../utils/timestamp.js";
-
-const logger = createLogger({ component: "tools:heart" });
+import { withAnalytics } from "./index.js";
 
 export function registerHeartTools(server: any, mcpAccessToken: string) {
   // Register list_heart_records tool
@@ -34,40 +32,31 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      logger.info("Tool invoked: list_heart_records");
-      try {
-        const records = await listHeartRecords(
-          mcpAccessToken,
-          args.startdate,
-          args.enddate,
-          args.offset
-        );
+      return withAnalytics(
+        "list_heart_records",
+        async () => {
+          const records = await listHeartRecords(
+            mcpAccessToken,
+            args.startdate,
+            args.enddate,
+            args.offset
+          );
 
-        // Add readable datetime fields for timestamps
-        const processedData = addReadableTimestamps(records);
+          // Add readable datetime fields for timestamps
+          const processedData = addReadableTimestamps(records);
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(processedData, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        logger.error("Tool error: list_heart_records");
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-          isError: true,
-        };
-      }
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(processedData, null, 2),
+              },
+            ],
+          };
+        },
+        { mcpAccessToken },
+        args
+      );
     }
   );
 
@@ -98,37 +87,27 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      logger.info("Tool invoked: get_heart_signal");
-      try {
-        const signal = await getHeartSignal(
-          mcpAccessToken,
-          args.signalid,
-          args.with_filtered,
-          args.with_intervals
-        );
+      return withAnalytics(
+        "get_heart_signal",
+        async () => {
+          const signal = await getHeartSignal(
+            mcpAccessToken,
+            args.signalid,
+            args.with_filtered,
+            args.with_intervals
+          );
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(signal, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        logger.error("Tool error: get_heart_signal");
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-          isError: true,
-        };
-      }
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(signal, null, 2),
+              },
+            ],
+          };
+        },
+        { mcpAccessToken }
+      );
     }
   );
 }

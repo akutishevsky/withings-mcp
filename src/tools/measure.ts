@@ -5,10 +5,8 @@ import {
   getActivity,
   getIntradayActivity,
 } from "../withings/api.js";
-import { createLogger } from "../utils/logger.js";
 import { addReadableTimestamps } from "../utils/timestamp.js";
-
-const logger = createLogger({ component: "tools:measure" });
+import { withAnalytics } from "./index.js";
 
 // Map of measure type IDs to descriptions
 const MEASURE_TYPE_MAP: Record<number, string> = {
@@ -196,66 +194,57 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      logger.info("Tool invoked: get_measures");
-      try {
-        const measures = await getMeasures(
-          mcpAccessToken,
-          args.meastype,
-          args.meastypes,
-          args.startdate,
-          args.enddate,
-          args.lastupdate,
-          args.offset
-        );
+      return withAnalytics(
+        "get_measures",
+        async () => {
+          const measures = await getMeasures(
+            mcpAccessToken,
+            args.meastype,
+            args.meastypes,
+            args.startdate,
+            args.enddate,
+            args.lastupdate,
+            args.offset
+          );
 
-        // Add type descriptions and calculated values to each measure
-        // Remove deprecated fields (algo, fm)
-        if (measures?.measuregrps) {
-          measures.measuregrps = measures.measuregrps.map((grp: any) => {
-            if (grp.measures) {
-              grp.measures = grp.measures.map((measure: any) => {
-                const calculatedValue =
-                  measure.value * Math.pow(10, measure.unit);
-                // Destructure to remove deprecated fields
-                const { algo, fm, ...cleanMeasure } = measure;
-                return {
-                  ...cleanMeasure,
-                  type_description:
-                    MEASURE_TYPE_MAP[measure.type] ||
-                    `Unknown type ${measure.type}`,
-                  calculated_value: calculatedValue,
-                };
-              });
-            }
-            return grp;
-          });
-        }
+          // Add type descriptions and calculated values to each measure
+          // Remove deprecated fields (algo, fm)
+          if (measures?.measuregrps) {
+            measures.measuregrps = measures.measuregrps.map((grp: any) => {
+              if (grp.measures) {
+                grp.measures = grp.measures.map((measure: any) => {
+                  const calculatedValue =
+                    measure.value * Math.pow(10, measure.unit);
+                  // Destructure to remove deprecated fields
+                  const { algo, fm, ...cleanMeasure } = measure;
+                  return {
+                    ...cleanMeasure,
+                    type_description:
+                      MEASURE_TYPE_MAP[measure.type] ||
+                      `Unknown type ${measure.type}`,
+                    calculated_value: calculatedValue,
+                  };
+                });
+              }
+              return grp;
+            });
+          }
 
-        // Add readable datetime fields for timestamps
-        const processedData = addReadableTimestamps(measures);
+          // Add readable datetime fields for timestamps
+          const processedData = addReadableTimestamps(measures);
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(processedData, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        logger.error("Tool error: get_measures");
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-          isError: true,
-        };
-      }
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(processedData, null, 2),
+              },
+            ],
+          };
+        },
+        { mcpAccessToken },
+        args
+      );
     }
   );
 
@@ -302,63 +291,56 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      logger.info("Tool invoked: get_workouts");
-      try {
-        const workouts = await getWorkouts(
-          mcpAccessToken,
-          args.startdateymd,
-          args.enddateymd,
-          args.lastupdate,
-          args.offset,
-          args.data_fields
-        );
+      return withAnalytics(
+        "get_workouts",
+        async () => {
+          const workouts = await getWorkouts(
+            mcpAccessToken,
+            args.startdateymd,
+            args.enddateymd,
+            args.lastupdate,
+            args.offset,
+            args.data_fields
+          );
 
-        // Replace category and model field values with descriptions
-        if (workouts?.series) {
-          workouts.series = workouts.series.map((workout: any) => {
-            const updatedWorkout = { ...workout };
+          // Replace category and model field values with descriptions
+          if (workouts?.series) {
+            workouts.series = workouts.series.map((workout: any) => {
+              const updatedWorkout = { ...workout };
 
-            // Replace category ID with description
-            if (typeof updatedWorkout.category === "number") {
-              updatedWorkout.category = WORKOUT_CATEGORY_MAP[updatedWorkout.category]
-                || `Unknown category ${updatedWorkout.category}`;
-            }
+              // Replace category ID with description
+              if (typeof updatedWorkout.category === "number") {
+                updatedWorkout.category =
+                  WORKOUT_CATEGORY_MAP[updatedWorkout.category] ||
+                  `Unknown category ${updatedWorkout.category}`;
+              }
 
-            // Replace model ID with device name
-            if (typeof updatedWorkout.model === "number") {
-              updatedWorkout.model = DEVICE_MODEL_MAP[updatedWorkout.model]
-                || `Unknown model ${updatedWorkout.model}`;
-            }
+              // Replace model ID with device name
+              if (typeof updatedWorkout.model === "number") {
+                updatedWorkout.model =
+                  DEVICE_MODEL_MAP[updatedWorkout.model] ||
+                  `Unknown model ${updatedWorkout.model}`;
+              }
 
-            return updatedWorkout;
-          });
-        }
+              return updatedWorkout;
+            });
+          }
 
-        // Add readable datetime fields for timestamps
-        const processedData = addReadableTimestamps(workouts);
+          // Add readable datetime fields for timestamps
+          const processedData = addReadableTimestamps(workouts);
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(processedData, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        logger.error("Tool error: get_workouts");
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-          isError: true,
-        };
-      }
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(processedData, null, 2),
+              },
+            ],
+          };
+        },
+        { mcpAccessToken },
+        args
+      );
     }
   );
 
@@ -402,42 +384,33 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      logger.info("Tool invoked: get_activity");
-      try {
-        const activity = await getActivity(
-          mcpAccessToken,
-          args.startdateymd,
-          args.enddateymd,
-          args.lastupdate,
-          args.offset,
-          args.data_fields
-        );
+      return withAnalytics(
+        "get_activity",
+        async () => {
+          const activity = await getActivity(
+            mcpAccessToken,
+            args.startdateymd,
+            args.enddateymd,
+            args.lastupdate,
+            args.offset,
+            args.data_fields
+          );
 
-        // Add readable datetime fields for timestamps
-        const processedData = addReadableTimestamps(activity);
+          // Add readable datetime fields for timestamps
+          const processedData = addReadableTimestamps(activity);
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(processedData, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        logger.error("Tool error: get_activity");
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-          isError: true,
-        };
-      }
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(processedData, null, 2),
+              },
+            ],
+          };
+        },
+        { mcpAccessToken },
+        args
+      );
     }
   );
 
@@ -469,40 +442,31 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      logger.info("Tool invoked: get_intraday_activity");
-      try {
-        const intradayActivity = await getIntradayActivity(
-          mcpAccessToken,
-          args.startdate,
-          args.enddate,
-          args.data_fields
-        );
+      return withAnalytics(
+        "get_intraday_activity",
+        async () => {
+          const intradayActivity = await getIntradayActivity(
+            mcpAccessToken,
+            args.startdate,
+            args.enddate,
+            args.data_fields
+          );
 
-        // Add readable datetime fields for timestamps
-        const processedData = addReadableTimestamps(intradayActivity);
+          // Add readable datetime fields for timestamps
+          const processedData = addReadableTimestamps(intradayActivity);
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(processedData, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        logger.error("Tool error: get_intraday_activity");
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-          isError: true,
-        };
-      }
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(processedData, null, 2),
+              },
+            ],
+          };
+        },
+        { mcpAccessToken },
+        args
+      );
     }
   );
 }

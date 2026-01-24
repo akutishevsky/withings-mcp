@@ -52,6 +52,16 @@ export async function cleanupExpiredRecords(): Promise<void> {
     logger.error("Failed to clean up mcp_tokens", { error: tokensError.message });
   }
 
+  // Clean up expired tool analytics (90 day TTL)
+  const { error: analyticsError } = await supabase
+    .from("tool_analytics")
+    .delete()
+    .lt("expires_at", now);
+
+  if (analyticsError) {
+    logger.error("Failed to clean up tool_analytics", { error: analyticsError.message });
+  }
+
   logger.info("Cleanup completed");
 }
 
@@ -82,6 +92,19 @@ export function scheduleCleanup(): void {
 
     logger.info("Scheduled cleanup: removed expired mcp_tokens");
   }, 60 * 60 * 1000); // 1 hour
+
+  // Clean up tool analytics once per day (90 day TTL)
+  setInterval(async () => {
+    const supabase = getSupabaseClient();
+    const now = new Date().toISOString();
+
+    await supabase
+      .from("tool_analytics")
+      .delete()
+      .lt("expires_at", now);
+
+    logger.info("Scheduled cleanup: removed expired tool_analytics");
+  }, 24 * 60 * 60 * 1000); // 24 hours
 
   logger.info("Cleanup scheduler started");
 }
