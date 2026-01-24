@@ -158,3 +158,112 @@ export const logger = new Logger();
 export function createLogger(context: Record<string, any>) {
   return logger.child(context);
 }
+
+/**
+ * Calculate the number of days between two dates.
+ * Used for analytics to log date range span without exposing actual dates.
+ * @param startDate - Start date in YYYY-MM-DD format
+ * @param endDate - End date in YYYY-MM-DD format
+ * @returns Number of days between dates, or undefined if dates are invalid/missing
+ */
+export function calculateDateRangeDays(
+  startDate?: string,
+  endDate?: string
+): number | undefined {
+  if (!startDate || !endDate) {
+    return undefined;
+  }
+
+  // Validate YYYY-MM-DD format
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+    return undefined;
+  }
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  // Check for invalid dates
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return undefined;
+  }
+
+  const diffMs = end.getTime() - start.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  return diffDays >= 0 ? diffDays : undefined;
+}
+
+/**
+ * Categorize errors into privacy-safe categories for analytics.
+ * Maps error messages to generic categories without exposing sensitive details.
+ * @param error - The error to categorize
+ * @returns A privacy-safe error category string
+ */
+export function categorizeError(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return "unknown";
+  }
+
+  const message = error.message.toLowerCase();
+
+  // Authentication/token issues
+  if (
+    message.includes("token") ||
+    message.includes("unauthorized") ||
+    message.includes("401") ||
+    message.includes("expired") ||
+    message.includes("invalid access")
+  ) {
+    return "auth_expired";
+  }
+
+  // Rate limiting
+  if (
+    message.includes("rate limit") ||
+    message.includes("too many") ||
+    message.includes("429")
+  ) {
+    return "rate_limited";
+  }
+
+  // Date format issues
+  if (
+    message.includes("date") ||
+    message.includes("yyyy-mm-dd") ||
+    message.includes("invalid format")
+  ) {
+    return "invalid_date_format";
+  }
+
+  // Missing parameters
+  if (
+    message.includes("required") ||
+    message.includes("missing") ||
+    message.includes("must provide")
+  ) {
+    return "missing_required_param";
+  }
+
+  // Withings API errors
+  if (
+    message.includes("withings") ||
+    message.includes("api error") ||
+    message.includes("status")
+  ) {
+    return "withings_api_error";
+  }
+
+  // Network errors
+  if (
+    message.includes("network") ||
+    message.includes("timeout") ||
+    message.includes("econnrefused") ||
+    message.includes("fetch") ||
+    message.includes("connection")
+  ) {
+    return "network_error";
+  }
+
+  return "unknown";
+}

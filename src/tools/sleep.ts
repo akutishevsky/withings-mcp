@@ -1,12 +1,10 @@
 import { z } from "zod";
 import { getSleep, getSleepSummary } from "../withings/api.js";
-import { createLogger } from "../utils/logger.js";
 import {
   addReadableTimestamps,
   addReadableNightEvents,
 } from "../utils/timestamp.js";
-
-const logger = createLogger({ component: "tools:sleep" });
+import { withAnalytics } from "./index.js";
 
 export function registerSleepTools(server: any, mcpAccessToken: string) {
   // Sleep v2 - Get: High-frequency sleep data with timestamps
@@ -35,40 +33,30 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      logger.info("Tool invoked: get_sleep");
-      try {
-        const sleepData = await getSleep(
-          mcpAccessToken,
-          args.startdate,
-          args.enddate,
-          args.data_fields
-        );
+      return withAnalytics(
+        "get_sleep",
+        async () => {
+          const sleepData = await getSleep(
+            mcpAccessToken,
+            args.startdate,
+            args.enddate,
+            args.data_fields
+          );
 
-        // Add readable datetime fields for timestamps
-        const processedData = addReadableTimestamps(sleepData);
+          // Add readable datetime fields for timestamps
+          const processedData = addReadableTimestamps(sleepData);
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(processedData, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        logger.error("Tool error: get_sleep");
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-          isError: true,
-        };
-      }
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(processedData, null, 2),
+              },
+            ],
+          };
+        },
+        args
+      );
     }
   );
 
@@ -114,48 +102,38 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      logger.info("Tool invoked: get_sleep_summary");
-      try {
-        const sleepData = await getSleepSummary(
-          mcpAccessToken,
-          args.startdateymd,
-          args.enddateymd,
-          args.lastupdate,
-          args.data_fields
-        );
-
-        // Add readable datetime fields for timestamps
-        let processedData = addReadableTimestamps(sleepData);
-
-        // Process each sleep summary for night_events timestamps
-        if (processedData?.series) {
-          processedData.series = processedData.series.map((sleepSummary: any) =>
-            addReadableNightEvents(sleepSummary)
+      return withAnalytics(
+        "get_sleep_summary",
+        async () => {
+          const sleepData = await getSleepSummary(
+            mcpAccessToken,
+            args.startdateymd,
+            args.enddateymd,
+            args.lastupdate,
+            args.data_fields
           );
-        }
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(processedData, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        logger.error("Tool error: get_sleep_summary");
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-          isError: true,
-        };
-      }
+          // Add readable datetime fields for timestamps
+          let processedData = addReadableTimestamps(sleepData);
+
+          // Process each sleep summary for night_events timestamps
+          if (processedData?.series) {
+            processedData.series = processedData.series.map(
+              (sleepSummary: any) => addReadableNightEvents(sleepSummary)
+            );
+          }
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(processedData, null, 2),
+              },
+            ],
+          };
+        },
+        args
+      );
     }
   );
 }

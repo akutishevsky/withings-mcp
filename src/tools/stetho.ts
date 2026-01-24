@@ -1,9 +1,7 @@
 import { z } from "zod";
 import { listStethoRecords, getStethoSignal } from "../withings/api.js";
-import { createLogger } from "../utils/logger.js";
 import { addReadableTimestamps } from "../utils/timestamp.js";
-
-const logger = createLogger({ component: "tools:stetho" });
+import { withAnalytics } from "./index.js";
 
 export function registerStethoTools(server: any, mcpAccessToken: string) {
   // Register list_stetho_records tool
@@ -34,40 +32,30 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      logger.info("Tool invoked: list_stetho_records");
-      try {
-        const records = await listStethoRecords(
-          mcpAccessToken,
-          args.startdate,
-          args.enddate,
-          args.offset
-        );
+      return withAnalytics(
+        "list_stetho_records",
+        async () => {
+          const records = await listStethoRecords(
+            mcpAccessToken,
+            args.startdate,
+            args.enddate,
+            args.offset
+          );
 
-        // Add readable datetime fields for timestamps
-        const processedData = addReadableTimestamps(records);
+          // Add readable datetime fields for timestamps
+          const processedData = addReadableTimestamps(records);
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(processedData, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        logger.error("Tool error: list_stetho_records");
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-          isError: true,
-        };
-      }
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(processedData, null, 2),
+              },
+            ],
+          };
+        },
+        args
+      );
     }
   );
 
@@ -86,8 +74,7 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      logger.info("Tool invoked: get_stetho_signal");
-      try {
+      return withAnalytics("get_stetho_signal", async () => {
         const signal = await getStethoSignal(mcpAccessToken, args.signalid);
 
         return {
@@ -98,20 +85,7 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
             },
           ],
         };
-      } catch (error) {
-        logger.error("Tool error: get_stetho_signal");
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-          isError: true,
-        };
-      }
+      });
     }
   );
 }
