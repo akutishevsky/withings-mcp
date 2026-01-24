@@ -29,3 +29,4 @@ npm-debug.log*
 # Supabase
 .supabase/
 supabase/.temp/
+supabase/config.toml
