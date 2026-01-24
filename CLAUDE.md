@@ -36,11 +36,15 @@ src/
 ├── auth/                     # Authentication & Authorization
 │   ├── oauth.ts             # OAuth 2.0 endpoints (/authorize, /callback, /token, /register)
 │   └── token-store.ts       # MCP ↔ Withings token mapping
+├── db/                       # Database Layer (Supabase)
+│   ├── supabase.ts          # Supabase client initialization
+│   ├── types.ts             # TypeScript types for database rows
+│   └── cleanup.ts           # Expired record cleanup scheduler
 ├── server/                   # Server components
 │   ├── app.ts               # Hono app setup, route mounting, MCP_ENDPOINT constant
 │   ├── mcp-endpoints.ts     # MCP GET/POST handlers for /mcp endpoint
 │   ├── middleware.ts        # Bearer token authentication
-│   └── rate-limiter.ts      # Rate limiting middleware using Deno KV
+│   └── rate-limiter.ts      # Rate limiting middleware using Supabase
 ├── tools/                    # MCP tools organized by Withings API category
 │   ├── index.ts             # Registers all tools on MCP server instances
 │   ├── sleep.ts             # Sleep API: get_sleep, get_sleep_summary
@@ -56,7 +60,11 @@ src/
 │   ├── logger.ts            # Privacy-safe custom logger for Deno Deploy
 │   ├── encryption.ts        # AES-256-GCM encryption for sensitive tokens
 │   └── timestamp.ts         # Timezone-aware timestamp conversion utilities
-└── index.ts                 # Main entry point (initializes stores & creates app)
+└── index.ts                 # Main entry point (initializes Supabase, stores & creates app)
+
+supabase/
+└── migrations/
+    └── 001_initial_schema.sql  # Database schema (tables, indexes)
 ```
 
 ### Logging
@@ -98,6 +106,8 @@ Each module creates a child logger with context:
 - `component: "tools:heart"` - Heart tool invocations
 - `component: "tools:stetho"` - Stetho tool invocations
 - `component: "transport"` - Transport and session management
+- `component: "supabase"` - Database client initialization
+- `component: "cleanup"` - Expired record cleanup operations
 
 ### Date and Timestamp Handling
 
@@ -195,20 +205,33 @@ The server uses **SSE (Server-Sent Events)** for MCP communication per the speci
 
 ### Data Storage
 
-Uses **Deno KV** (@deno/kv) for persistent storage:
+Uses **Supabase PostgreSQL** (@supabase/supabase-js) for persistent storage:
+
+**Database Schema** (supabase/migrations/001_initial_schema.sql):
+- `mcp_tokens`: MCP token → Withings token mapping (30 day TTL)
+- `oauth_sessions`: OAuth session state (10 min TTL)
+- `auth_codes`: Authorization codes (10 min TTL)
+- `registered_clients`: Dynamic client registration (no TTL)
+- `rate_limits`: Rate limiting counters (dynamic window TTL)
 
 **Token Store** (src/auth/token-store.ts):
 - Maps MCP tokens → Withings tokens (access, refresh, userId, expiry)
 - **Security**: Withings tokens encrypted at rest using AES-256-GCM (src/utils/encryption.ts)
 - Encryption key derived from `ENCRYPTION_SECRET` via PBKDF2
-- **TTL**: 30 days (automatic expiration) - MCP token validity period matches this TTL
+- **TTL**: 30 days - enforced via `expires_at` column + query filtering
 - **Token Refresh**: Withings access tokens (~3 hour lifetime) are automatically refreshed when expired/expiring during API calls (src/withings/api.ts)
-- Prefix: `["tokens", mcpToken]`
 
 **OAuth Store** (src/auth/oauth.ts):
-- OAuth sessions (10min TTL): `["oauth_sessions", sessionId]`
-- Auth codes (10min TTL): `["auth_codes", code]`
-- Registered clients: `["clients", clientId]`
+- OAuth sessions (10min TTL): `oauth_sessions` table
+- Auth codes (10min TTL): `auth_codes` table
+- Registered clients (no TTL): `registered_clients` table
+
+**TTL Implementation**:
+- All queries filter by `expires_at > now()` to exclude expired records
+- Cleanup scheduler runs on startup and periodically:
+  - Every 5 minutes: oauth_sessions, auth_codes, rate_limits
+  - Every 1 hour: mcp_tokens
+- Cleanup logic in src/db/cleanup.ts
 
 ## Environment Variables
 
@@ -217,6 +240,8 @@ Required:
 - `WITHINGS_CLIENT_SECRET`: From Withings developer console
 - `WITHINGS_REDIRECT_URI`: Callback URL (must match Withings app settings)
 - `ENCRYPTION_SECRET`: Secret key for encrypting tokens at rest (min 32 chars, generate with `npm run generate-secret` or `openssl rand -hex 32`)
+- `SUPABASE_URL`: Supabase project URL (from Dashboard → Settings → API)
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (from Dashboard → Settings → API)
 
 Optional:
 - `PORT`: Server port (default: 3000)

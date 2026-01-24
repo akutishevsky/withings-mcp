@@ -1,12 +1,21 @@
 #!/usr/bin/env node
 
+import { initSupabase } from "./db/supabase.js";
+import { cleanupExpiredRecords, scheduleCleanup } from "./db/cleanup.js";
 import { initOAuthStore } from "./auth/oauth.js";
 import { tokenStore } from "./auth/token-store.js";
 import { createApp } from "./server/app.js";
 import { setOAuthConfig } from "./config.js";
 import { initRateLimiter } from "./server/rate-limiter.js";
 
-// Initialize stores
+// Initialize Supabase first (required by all stores)
+await initSupabase();
+
+// Cleanup expired records immediately, then schedule periodic cleanup
+await cleanupExpiredRecords();
+scheduleCleanup();
+
+// Initialize stores (now use Supabase internally)
 await tokenStore.init();
 await initOAuthStore();
 await initRateLimiter();
