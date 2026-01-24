@@ -8,7 +8,7 @@ A Model Context Protocol (MCP) server that brings your Withings health data into
 
 ## Demo
 
-<video src="demo/demo.mp4" controls width="400"></video>
+![Demo](demo/demo.gif)
 
 ## Table of Contents
 
