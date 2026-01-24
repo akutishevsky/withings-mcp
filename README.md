@@ -6,8 +6,13 @@ A Model Context Protocol (MCP) server that brings your Withings health data into
 
 **⚠️ Disclaimer**: This server is provided **as-is** without any guarantees or warranties. While I've made every effort to ensure security and privacy, I make no guarantees about availability, data integrity, or security. Use at your own risk. For production use cases, consider self-hosting your own instance.
 
+## Demo
+
+<video src="demo/demo.mp4" controls width="400"></video>
+
 ## Table of Contents
 
+- [Demo](#demo)
 - [What Can You Do With This?](#what-can-you-do-with-this)
 - [For End Users: Using the Hosted Server](#for-end-users-using-the-hosted-server)
   - [Prerequisites](#prerequisites)
