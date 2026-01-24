@@ -55,6 +55,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
             ],
           };
         },
+        { mcpAccessToken },
         args
       );
     }
@@ -132,6 +133,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
             ],
           };
         },
+        { mcpAccessToken },
         args
       );
     }

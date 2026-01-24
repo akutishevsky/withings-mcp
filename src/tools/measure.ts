@@ -242,6 +242,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
             ],
           };
         },
+        { mcpAccessToken },
         args
       );
     }
@@ -337,6 +338,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
             ],
           };
         },
+        { mcpAccessToken },
         args
       );
     }
@@ -406,6 +408,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
             ],
           };
         },
+        { mcpAccessToken },
         args
       );
     }
@@ -461,6 +464,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
             ],
           };
         },
+        { mcpAccessToken },
         args
       );
     }

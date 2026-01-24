@@ -12,21 +12,25 @@ export function registerUserTools(server: any, mcpAccessToken: string) {
       inputSchema: {},
     },
     async () => {
-      return withAnalytics("get_user_devices", async () => {
-        const devices = await getUserDevices(mcpAccessToken);
+      return withAnalytics(
+        "get_user_devices",
+        async () => {
+          const devices = await getUserDevices(mcpAccessToken);
 
-        // Add readable datetime fields for timestamps
-        const processedData = addReadableTimestamps(devices);
+          // Add readable datetime fields for timestamps
+          const processedData = addReadableTimestamps(devices);
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(processedData, null, 2),
-            },
-          ],
-        };
-      });
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(processedData, null, 2),
+              },
+            ],
+          };
+        },
+        { mcpAccessToken }
+      );
     }
   );
 
@@ -39,18 +43,22 @@ export function registerUserTools(server: any, mcpAccessToken: string) {
       inputSchema: {},
     },
     async () => {
-      return withAnalytics("get_user_goals", async () => {
-        const goals = await getUserGoals(mcpAccessToken);
+      return withAnalytics(
+        "get_user_goals",
+        async () => {
+          const goals = await getUserGoals(mcpAccessToken);
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(goals, null, 2),
-            },
-          ],
-        };
-      });
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(goals, null, 2),
+              },
+            ],
+          };
+        },
+        { mcpAccessToken }
+      );
     }
   );
 }

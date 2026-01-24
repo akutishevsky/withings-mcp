@@ -54,6 +54,7 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
             ],
           };
         },
+        { mcpAccessToken },
         args
       );
     }
@@ -86,23 +87,27 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      return withAnalytics("get_heart_signal", async () => {
-        const signal = await getHeartSignal(
-          mcpAccessToken,
-          args.signalid,
-          args.with_filtered,
-          args.with_intervals
-        );
+      return withAnalytics(
+        "get_heart_signal",
+        async () => {
+          const signal = await getHeartSignal(
+            mcpAccessToken,
+            args.signalid,
+            args.with_filtered,
+            args.with_intervals
+          );
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(signal, null, 2),
-            },
-          ],
-        };
-      });
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(signal, null, 2),
+              },
+            ],
+          };
+        },
+        { mcpAccessToken }
+      );
     }
   );
 }

@@ -54,6 +54,7 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
             ],
           };
         },
+        { mcpAccessToken },
         args
       );
     }
@@ -74,18 +75,22 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
       },
     },
     async (args: any) => {
-      return withAnalytics("get_stetho_signal", async () => {
-        const signal = await getStethoSignal(mcpAccessToken, args.signalid);
+      return withAnalytics(
+        "get_stetho_signal",
+        async () => {
+          const signal = await getStethoSignal(mcpAccessToken, args.signalid);
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(signal, null, 2),
-            },
-          ],
-        };
-      });
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(signal, null, 2),
+              },
+            ],
+          };
+        },
+        { mcpAccessToken }
+      );
     }
   );
 }
