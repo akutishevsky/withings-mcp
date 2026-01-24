@@ -1,5 +1,5 @@
 import { Context } from "hono";
-import { openKv } from "@deno/kv";
+import { getSupabaseClient } from "../db/supabase.js";
 import { createLogger } from "../utils/logger.js";
 
 const logger = createLogger({ component: "rate-limiter" });
@@ -9,11 +9,15 @@ interface RateLimitConfig {
   windowMs: number;
 }
 
-class RateLimiter {
-  private kv: Awaited<ReturnType<typeof openKv>> | null = null;
+interface RateLimitRow {
+  identifier: string;
+  request_count: number;
+  reset_time: string;
+}
 
-  async init() {
-    this.kv = await openKv();
+class RateLimiter {
+  async init(): Promise<void> {
+    // No initialization needed - Supabase client is initialized separately
   }
 
   /**
@@ -24,20 +28,33 @@ class RateLimiter {
     identifier: string,
     config: RateLimitConfig
   ): Promise<{ allowed: boolean; remaining: number; resetTime: number }> {
-    if (!this.kv) throw new Error("KV not initialized");
-
-    const key = ["rate_limit", identifier];
+    const supabase = getSupabaseClient();
     const now = Date.now();
-    const windowStart = now - config.windowMs;
+    const nowIso = new Date(now).toISOString();
 
-    // Get current request count
-    const result = await this.kv.get<{ count: number; resetTime: number }>(key);
-    const current = result.value;
+    // Get current rate limit record
+    const { data } = await supabase
+      .from("rate_limits")
+      .select("*")
+      .eq("identifier", identifier)
+      .single();
 
-    if (!current || current.resetTime < now) {
-      // New window or expired window
+    const current = data as RateLimitRow | null;
+
+    if (!current || new Date(current.reset_time).getTime() < now) {
+      // New window or expired window - create/update record
       const resetTime = now + config.windowMs;
-      await this.kv.set(key, { count: 1, resetTime }, { expireIn: config.windowMs });
+      const resetTimeIso = new Date(resetTime).toISOString();
+
+      await supabase.from("rate_limits").upsert({
+        identifier,
+        request_count: 1,
+        reset_time: resetTimeIso,
+        updated_at: nowIso,
+      }, {
+        onConflict: "identifier",
+      });
+
       return {
         allowed: true,
         remaining: config.maxRequests - 1,
@@ -45,26 +62,30 @@ class RateLimiter {
       };
     }
 
-    if (current.count >= config.maxRequests) {
+    const resetTime = new Date(current.reset_time).getTime();
+
+    if (current.request_count >= config.maxRequests) {
       // Rate limit exceeded
       return {
         allowed: false,
         remaining: 0,
-        resetTime: current.resetTime,
+        resetTime,
       };
     }
 
     // Increment count
-    await this.kv.set(
-      key,
-      { count: current.count + 1, resetTime: current.resetTime },
-      { expireIn: current.resetTime - now }
-    );
+    await supabase
+      .from("rate_limits")
+      .update({
+        request_count: current.request_count + 1,
+        updated_at: nowIso,
+      })
+      .eq("identifier", identifier);
 
     return {
       allowed: true,
-      remaining: config.maxRequests - current.count - 1,
-      resetTime: current.resetTime,
+      remaining: config.maxRequests - current.request_count - 1,
+      resetTime,
     };
   }
 }

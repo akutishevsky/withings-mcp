@@ -163,6 +163,16 @@ npm run generate-secret
 # Copy the output - you'll need it for environment variables
 ```
 
+### Step 2.5: Set Up Supabase Database
+
+1. Create a free project at [Supabase](https://supabase.com)
+2. Install the Supabase CLI: `npm install -g supabase`
+3. Link your project: `supabase link --project-ref <your-project-ref>`
+4. Apply the database migrations: `supabase db push`
+5. Get your credentials from Dashboard → Settings → API:
+   - **Project URL** → `SUPABASE_URL`
+   - **Service role key** → `SUPABASE_SERVICE_ROLE_KEY`
+
 ### Step 3: Local Development
 
 > **Note**: Withings requires a publicly accessible URL for OAuth callbacks. For local development, use a tunneling service to expose your local server or deploy to a staging environment for testing.
@@ -176,6 +186,8 @@ cp .env.example .env
 # WITHINGS_CLIENT_SECRET=your_client_secret
 # WITHINGS_REDIRECT_URI=https://your-tunnel-url.com/callback
 # ENCRYPTION_SECRET=paste_generated_secret_here
+# SUPABASE_URL=https://your-project.supabase.co
+# SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 # PORT=3000
 
 # Build the project
@@ -205,6 +217,8 @@ Set the following environment variables on your hosting platform:
 | `WITHINGS_CLIENT_SECRET` | Yes | `your_client_secret` |
 | `WITHINGS_REDIRECT_URI` | Yes | `https://your-domain.com/callback` |
 | `ENCRYPTION_SECRET` | Yes | Generated from step 2 |
+| `SUPABASE_URL` | Yes | `https://your-project.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Your Supabase service role key |
 | `PORT` | No | `3000` (or your platform's default) |
 | `LOG_LEVEL` | No | `info` |
 | `ALLOWED_ORIGINS` | No | `https://example.com,https://app.example.com` |
@@ -244,6 +258,8 @@ Configure your MCP client with the following connection details:
 | `WITHINGS_CLIENT_SECRET` | Yes | Your Withings app client secret |
 | `WITHINGS_REDIRECT_URI` | Yes | OAuth callback URL (must match Withings app settings) |
 | `ENCRYPTION_SECRET` | Yes | 32+ character secret for token encryption (generate with `npm run generate-secret`) |
+| `SUPABASE_URL` | Yes | Your Supabase project URL (from Dashboard → Settings → API) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Your Supabase service role key (from Dashboard → Settings → API) |
 | `PORT` | No | Server port (default: 3000) |
 | `LOG_LEVEL` | No | Logging level: trace, debug, info, warn, error (default: info) |
 | `ALLOWED_ORIGINS` | No | Comma-separated list of allowed CORS origins for browser clients |
@@ -261,12 +277,16 @@ npm run generate-secret  # Generate encryption secret for ENCRYPTION_SECRET env 
 ```
 src/
 ├── auth/              # OAuth 2.0 authentication & token storage
+├── db/                # Supabase client & cleanup scheduler
 ├── server/            # Hono app, MCP endpoints, middleware
 ├── tools/             # MCP tools for Withings API (sleep, measure, user, heart, stetho)
 ├── transport/         # Custom SSE transport for MCP
 ├── withings/          # Withings API client
 ├── utils/             # Logger and encryption utilities
 └── index.ts           # Main entry point
+
+supabase/
+└── migrations/        # Database schema migrations
 ```
 
 See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
@@ -322,4 +342,5 @@ Built with:
 - [Model Context Protocol](https://modelcontextprotocol.io/) by Anthropic
 - [Withings API](https://developer.withings.com/)
 - [Hono](https://hono.dev/) web framework
+- [Supabase](https://supabase.com/) for database
 - [Deno Deploy](https://deno.com/deploy) for hosting

@@ -25,3 +25,8 @@ npm-debug.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# Supabase
+.supabase/
+supabase/.temp/
+supabase/config.toml

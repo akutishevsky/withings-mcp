@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { tokenStore } from "./token-store.js";
 import crypto from "node:crypto";
-import { openKv } from "@deno/kv";
+import { getSupabaseClient } from "../db/supabase.js";
 import { createLogger } from "../utils/logger.js";
 import { rateLimit } from "../server/rate-limiter.js";
 
@@ -9,6 +9,8 @@ const logger = createLogger({ component: "oauth" });
 
 const WITHINGS_AUTH_URL = "https://account.withings.com/oauth2_user/authorize2";
 const WITHINGS_TOKEN_URL = "https://wbsapi.withings.net/v2/oauth2";
+
+const SESSION_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 export interface OAuthConfig {
   clientId: string;
@@ -24,11 +26,28 @@ interface OAuthSession {
   clientId?: string;
 }
 
+interface OAuthSessionRow {
+  session_id: string;
+  state: string;
+  code_challenge: string | null;
+  code_challenge_method: string | null;
+  redirect_uri: string;
+  client_id: string | null;
+}
+
 interface AuthCode {
   withingsCode: string;
   clientId?: string;
   redirectUri: string;
   codeChallenge?: string;
+}
+
+interface AuthCodeRow {
+  code: string;
+  withings_code: string;
+  client_id: string | null;
+  redirect_uri: string;
+  code_challenge: string | null;
 }
 
 interface RegisteredClient {
@@ -37,54 +56,168 @@ interface RegisteredClient {
   redirectUris: string[];
 }
 
-class OAuthStore {
-  private kv: Awaited<ReturnType<typeof openKv>> | null = null;
+interface RegisteredClientRow {
+  client_id: string;
+  client_secret: string | null;
+  redirect_uris: string[];
+}
 
-  async init() {
-    this.kv = await openKv();
+class OAuthStore {
+  async init(): Promise<void> {
+    // No initialization needed - Supabase client is initialized separately
   }
 
   async storeSession(sessionId: string, session: OAuthSession): Promise<void> {
-    if (!this.kv) throw new Error("KV not initialized");
-    await this.kv.set(["oauth_sessions", sessionId], session, { expireIn: 600000 }); // 10 min
+    const supabase = getSupabaseClient();
+    const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+
+    const { error } = await supabase.from("oauth_sessions").insert({
+      session_id: sessionId,
+      state: session.state,
+      code_challenge: session.codeChallenge || null,
+      code_challenge_method: session.codeChallengeMethod || null,
+      redirect_uri: session.redirectUri,
+      client_id: session.clientId || null,
+      expires_at: expiresAt,
+    });
+
+    if (error) {
+      throw new Error(`Failed to store OAuth session: ${error.message}`);
+    }
   }
 
   async getSession(sessionId: string): Promise<OAuthSession | null> {
-    if (!this.kv) throw new Error("KV not initialized");
-    const result = await this.kv.get<OAuthSession>(["oauth_sessions", sessionId]);
-    return result.value;
+    const supabase = getSupabaseClient();
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from("oauth_sessions")
+      .select("*")
+      .eq("session_id", sessionId)
+      .gt("expires_at", now)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    const row = data as OAuthSessionRow;
+
+    return {
+      state: row.state,
+      codeChallenge: row.code_challenge || undefined,
+      codeChallengeMethod: row.code_challenge_method || undefined,
+      redirectUri: row.redirect_uri,
+      clientId: row.client_id || undefined,
+    };
   }
 
   async deleteSession(sessionId: string): Promise<void> {
-    if (!this.kv) throw new Error("KV not initialized");
-    await this.kv.delete(["oauth_sessions", sessionId]);
+    const supabase = getSupabaseClient();
+
+    const { error } = await supabase
+      .from("oauth_sessions")
+      .delete()
+      .eq("session_id", sessionId);
+
+    if (error) {
+      throw new Error(`Failed to delete OAuth session: ${error.message}`);
+    }
   }
 
   async storeAuthCode(code: string, data: AuthCode): Promise<void> {
-    if (!this.kv) throw new Error("KV not initialized");
-    await this.kv.set(["auth_codes", code], data, { expireIn: 600000 }); // 10 min
+    const supabase = getSupabaseClient();
+    const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+
+    const { error } = await supabase.from("auth_codes").insert({
+      code,
+      withings_code: data.withingsCode,
+      client_id: data.clientId || null,
+      redirect_uri: data.redirectUri,
+      code_challenge: data.codeChallenge || null,
+      expires_at: expiresAt,
+    });
+
+    if (error) {
+      throw new Error(`Failed to store auth code: ${error.message}`);
+    }
   }
 
   async getAuthCode(code: string): Promise<AuthCode | null> {
-    if (!this.kv) throw new Error("KV not initialized");
-    const result = await this.kv.get<AuthCode>(["auth_codes", code]);
-    return result.value;
+    const supabase = getSupabaseClient();
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from("auth_codes")
+      .select("*")
+      .eq("code", code)
+      .gt("expires_at", now)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    const row = data as AuthCodeRow;
+
+    return {
+      withingsCode: row.withings_code,
+      clientId: row.client_id || undefined,
+      redirectUri: row.redirect_uri,
+      codeChallenge: row.code_challenge || undefined,
+    };
   }
 
   async deleteAuthCode(code: string): Promise<void> {
-    if (!this.kv) throw new Error("KV not initialized");
-    await this.kv.delete(["auth_codes", code]);
+    const supabase = getSupabaseClient();
+
+    const { error } = await supabase
+      .from("auth_codes")
+      .delete()
+      .eq("code", code);
+
+    if (error) {
+      throw new Error(`Failed to delete auth code: ${error.message}`);
+    }
   }
 
   async registerClient(clientId: string, client: RegisteredClient): Promise<void> {
-    if (!this.kv) throw new Error("KV not initialized");
-    await this.kv.set(["clients", clientId], client);
+    const supabase = getSupabaseClient();
+
+    const { error } = await supabase.from("registered_clients").upsert({
+      client_id: clientId,
+      client_secret: client.clientSecret || null,
+      redirect_uris: client.redirectUris,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: "client_id",
+    });
+
+    if (error) {
+      throw new Error(`Failed to register client: ${error.message}`);
+    }
   }
 
   async getClient(clientId: string): Promise<RegisteredClient | null> {
-    if (!this.kv) throw new Error("KV not initialized");
-    const result = await this.kv.get<RegisteredClient>(["clients", clientId]);
-    return result.value;
+    const supabase = getSupabaseClient();
+
+    const { data, error } = await supabase
+      .from("registered_clients")
+      .select("*")
+      .eq("client_id", clientId)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    const row = data as RegisteredClientRow;
+
+    return {
+      clientId: row.client_id,
+      clientSecret: row.client_secret || undefined,
+      redirectUris: row.redirect_uris,
+    };
   }
 }
 
@@ -308,7 +441,7 @@ export function createOAuthRouter(config: OAuthConfig) {
 
       logger.info("Token exchange completed successfully");
 
-      // MCP token is valid for 30 days (matches KV TTL)
+      // MCP token is valid for 30 days (matches database TTL)
       // Server handles refreshing Withings tokens transparently
       const MCP_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
