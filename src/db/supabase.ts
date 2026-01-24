@@ -23,11 +23,11 @@ export function getSupabaseClient(): SupabaseDatabase {
  */
 export async function initSupabase(): Promise<void> {
   const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseKey = process.env.SUPABASE_SECRET_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
-      "Missing Supabase environment variables. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
+      "Missing Supabase environment variables. Set SUPABASE_URL and SUPABASE_SECRET_KEY."
     );
   }
 

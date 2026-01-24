@@ -241,7 +241,7 @@ Required:
 - `WITHINGS_REDIRECT_URI`: Callback URL (must match Withings app settings)
 - `ENCRYPTION_SECRET`: Secret key for encrypting tokens at rest (min 32 chars, generate with `npm run generate-secret` or `openssl rand -hex 32`)
 - `SUPABASE_URL`: Supabase project URL (from Dashboard → Settings → API)
-- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (from Dashboard → Settings → API)
+- `SUPABASE_SECRET_KEY`: Supabase service role key (from Dashboard → Settings → API)
 
 Optional:
 - `PORT`: Server port (default: 3000)
