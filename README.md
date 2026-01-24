@@ -171,7 +171,7 @@ npm run generate-secret
 4. Apply the database migrations: `supabase db push`
 5. Get your credentials from Dashboard → Settings → API:
    - **Project URL** → `SUPABASE_URL`
-   - **Service role key** → `SUPABASE_SERVICE_ROLE_KEY`
+   - **Service role key** → `SUPABASE_SECRET_KEY`
 
 ### Step 3: Local Development
 
@@ -187,7 +187,7 @@ cp .env.example .env
 # WITHINGS_REDIRECT_URI=https://your-tunnel-url.com/callback
 # ENCRYPTION_SECRET=paste_generated_secret_here
 # SUPABASE_URL=https://your-project.supabase.co
-# SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+# SUPABASE_SECRET_KEY=your_service_role_key
 # PORT=3000
 
 # Build the project
@@ -218,7 +218,7 @@ Set the following environment variables on your hosting platform:
 | `WITHINGS_REDIRECT_URI` | Yes | `https://your-domain.com/callback` |
 | `ENCRYPTION_SECRET` | Yes | Generated from step 2 |
 | `SUPABASE_URL` | Yes | `https://your-project.supabase.co` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Your Supabase service role key |
+| `SUPABASE_SECRET_KEY` | Yes | Your Supabase service role key |
 | `PORT` | No | `3000` (or your platform's default) |
 | `LOG_LEVEL` | No | `info` |
 | `ALLOWED_ORIGINS` | No | `https://example.com,https://app.example.com` |
@@ -259,7 +259,7 @@ Configure your MCP client with the following connection details:
 | `WITHINGS_REDIRECT_URI` | Yes | OAuth callback URL (must match Withings app settings) |
 | `ENCRYPTION_SECRET` | Yes | 32+ character secret for token encryption (generate with `npm run generate-secret`) |
 | `SUPABASE_URL` | Yes | Your Supabase project URL (from Dashboard → Settings → API) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Your Supabase service role key (from Dashboard → Settings → API) |
+| `SUPABASE_SECRET_KEY` | Yes | Your Supabase service role key (from Dashboard → Settings → API) |
 | `PORT` | No | Server port (default: 3000) |
 | `LOG_LEVEL` | No | Logging level: trace, debug, info, warn, error (default: info) |
 | `ALLOWED_ORIGINS` | No | Comma-separated list of allowed CORS origins for browser clients |
