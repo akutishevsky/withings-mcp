@@ -9,7 +9,7 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
     "list_stetho_records",
     {
       description:
-        "Get a list of stethoscope recordings for a given time period. Returns metadata including signal IDs, timestamps, device IDs, valve heart disease (VHD) indicators, and timezone information. Use the signal ID from this list with get_stetho_signal to retrieve the full audio signal data.",
+        "Get a list of stethoscope recordings for a given time period. Returns metadata including signal IDs, timestamps, device IDs, valve heart disease (VHD) indicators, and timezone information. Use the signal ID from this list with get_stetho_signal to retrieve the full audio signal data. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
       inputSchema: {
         startdate: z
           .string()

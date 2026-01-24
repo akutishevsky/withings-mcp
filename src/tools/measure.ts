@@ -153,7 +153,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
     "get_measures",
     {
       description:
-        "Get health measures including weight, height, body composition, blood pressure, heart rate, temperature, and more. Supports single or multiple measure types.",
+        "Get health measures including weight, height, body composition, blood pressure, heart rate, temperature, and more. Supports single or multiple measure types. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
       inputSchema: {
         meastype: z
           .number()
@@ -253,7 +253,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
     "get_workouts",
     {
       description:
-        "Get workout summaries including calories burned, heart rate data, distance, steps, elevation, and swimming metrics. Returns aggregated data for each workout session. By default returns ALL available data fields.",
+        "Get workout summaries including calories burned, heart rate data, distance, steps, elevation, and swimming metrics. Returns aggregated data for each workout session. By default returns ALL available data fields. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
       inputSchema: {
         startdateymd: z
           .string()
@@ -349,7 +349,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
     "get_activity",
     {
       description:
-        "Get daily aggregated activity data including steps, distance, elevation, heart rate, calories, and activity durations (soft/moderate/intense). Returns summary data aggregated per day.",
+        "Get daily aggregated activity data including steps, distance, elevation, heart rate, calories, and activity durations (soft/moderate/intense). Returns summary data aggregated per day. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
       inputSchema: {
         startdateymd: z
           .string()
@@ -419,7 +419,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
     "get_intraday_activity",
     {
       description:
-        "Get high-frequency intraday activity data captured throughout the day. Returns time-series data with timestamps. Note: If startdate and enddate are separated by more than 24h, only the first 24h after startdate will be returned. If no dates provided, returns most recent activity data.",
+        "Get high-frequency intraday activity data captured throughout the day. Returns time-series data with timestamps. Note: If startdate and enddate are separated by more than 24h, only the first 24h after startdate will be returned. If no dates provided, returns most recent activity data. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
       inputSchema: {
         startdate: z
           .string()

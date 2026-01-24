@@ -12,7 +12,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
     "get_sleep",
     {
       description:
-        "Get high-frequency sleep data captured during sleep, including sleep stages and health metrics at minute-level resolution. Use this for detailed analysis of sleep patterns. For aggregated summaries, use get_sleep_summary instead. Note: If startdate and enddate are separated by more than 24h, only the first 24h after startdate will be returned.",
+        "Get high-frequency sleep data captured during sleep, including sleep stages and health metrics at minute-level resolution. Use this for detailed analysis of sleep patterns. For aggregated summaries, use get_sleep_summary instead. Note: If startdate and enddate are separated by more than 24h, only the first 24h after startdate will be returned. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
       inputSchema: {
         startdate: z
           .string()
@@ -66,7 +66,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
     "get_sleep_summary",
     {
       description:
-        "Get aggregated sleep activity summaries for specified date range. Returns comprehensive sleep metrics including duration, stages, quality scores, heart rate, breathing analysis, and sleep apnea indicators. Use this for daily/weekly sleep reports. For detailed minute-by-minute data, use get_sleep instead.",
+        "Get aggregated sleep activity summaries for specified date range. Returns comprehensive sleep metrics including duration, stages, quality scores, heart rate, breathing analysis, and sleep apnea indicators. Use this for daily/weekly sleep reports. For detailed minute-by-minute data, use get_sleep instead. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
       inputSchema: {
         startdateymd: z
           .string()
