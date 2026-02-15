@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "withings": {
+      "url": "https://withings-mcp.com/mcp"
+    }
+  }
+}
