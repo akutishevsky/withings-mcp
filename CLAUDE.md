@@ -507,6 +507,10 @@ Tools are registered using a centralized approach:
 - Each tool category has its own file in `src/tools/`
 - `src/tools/index.ts` provides `registerAllTools()` to register all tools at once
 - Tools receive the `mcpAccessToken` as a closure parameter for authentication
+- Each tool includes a human-friendly `title` (e.g., `get_sleep` → "Sleep Data")
+- Each tool defines an `outputSchema` (Zod) describing the response structure, using `.passthrough()` on objects to allow dynamic API fields
+- Each tool includes `annotations` (`readOnlyHint: true`, `destructiveHint: false`, `openWorldHint: true`) since all tools are read-only Withings API queries
+- Tool handlers return both `structuredContent` (raw data object) and `content` (JSON-stringified text) for backward compatibility
 
 ## Withings API Integration
 
