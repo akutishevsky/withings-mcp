@@ -4,7 +4,7 @@ import {
   addReadableTimestamps,
   addReadableNightEvents,
 } from "../utils/timestamp.js";
-import { withAnalytics } from "./index.js";
+import { withAnalytics, TOOL_ANNOTATIONS, toolResponse } from "./index.js";
 
 export function registerSleepTools(server: any, mcpAccessToken: string) {
   // Sleep v2 - Get: High-frequency sleep data with timestamps
@@ -35,11 +35,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
       outputSchema: {
         series: z.array(z.object({}).passthrough()),
       },
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        openWorldHint: true,
-      },
+      annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
       return withAnalytics(
@@ -55,15 +51,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
           // Add readable datetime fields for timestamps
           const processedData = addReadableTimestamps(sleepData);
 
-          return {
-            structuredContent: processedData,
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(processedData, null, 2),
-              },
-            ],
-          };
+          return toolResponse(processedData);
         },
         { mcpAccessToken },
         args
@@ -116,11 +104,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
         series: z.array(z.object({}).passthrough()),
         more: z.boolean().optional(),
       },
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        openWorldHint: true,
-      },
+      annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
       return withAnalytics(
@@ -144,15 +128,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
             );
           }
 
-          return {
-            structuredContent: processedData,
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(processedData, null, 2),
-              },
-            ],
-          };
+          return toolResponse(processedData);
         },
         { mcpAccessToken },
         args

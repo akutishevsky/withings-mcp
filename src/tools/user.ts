@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getUserDevices, getUserGoals } from "../withings/api.js";
 import { addReadableTimestamps } from "../utils/timestamp.js";
-import { withAnalytics } from "./index.js";
+import { withAnalytics, TOOL_ANNOTATIONS, toolResponse } from "./index.js";
 
 export function registerUserTools(server: any, mcpAccessToken: string) {
   // Register get_user_devices tool
@@ -17,11 +17,7 @@ export function registerUserTools(server: any, mcpAccessToken: string) {
           .array(z.object({}).passthrough())
           .describe("List of Withings devices"),
       },
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        openWorldHint: true,
-      },
+      annotations: TOOL_ANNOTATIONS,
     },
     async () => {
       return withAnalytics(
@@ -32,15 +28,7 @@ export function registerUserTools(server: any, mcpAccessToken: string) {
           // Add readable datetime fields for timestamps
           const processedData = addReadableTimestamps(devices);
 
-          return {
-            structuredContent: processedData,
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(processedData, null, 2),
-              },
-            ],
-          };
+          return toolResponse(processedData);
         },
         { mcpAccessToken }
       );
@@ -63,11 +51,7 @@ export function registerUserTools(server: any, mcpAccessToken: string) {
           .passthrough()
           .optional(),
       },
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        openWorldHint: true,
-      },
+      annotations: TOOL_ANNOTATIONS,
     },
     async () => {
       return withAnalytics(
@@ -75,15 +59,7 @@ export function registerUserTools(server: any, mcpAccessToken: string) {
         async () => {
           const goals = await getUserGoals(mcpAccessToken);
 
-          return {
-            structuredContent: goals,
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(goals, null, 2),
-              },
-            ],
-          };
+          return toolResponse(goals);
         },
         { mcpAccessToken }
       );

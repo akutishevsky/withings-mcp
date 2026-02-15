@@ -6,7 +6,7 @@ import {
   getIntradayActivity,
 } from "../withings/api.js";
 import { addReadableTimestamps } from "../utils/timestamp.js";
-import { withAnalytics } from "./index.js";
+import { withAnalytics, TOOL_ANNOTATIONS, toolResponse } from "./index.js";
 
 // Map of measure type IDs to descriptions
 const MEASURE_TYPE_MAP: Record<number, string> = {
@@ -198,11 +198,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
         more: z.number().optional(),
         offset: z.number().optional(),
       },
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        openWorldHint: true,
-      },
+      annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
       return withAnalytics(
@@ -244,15 +240,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           // Add readable datetime fields for timestamps
           const processedData = addReadableTimestamps(measures);
 
-          return {
-            structuredContent: processedData,
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(processedData, null, 2),
-              },
-            ],
-          };
+          return toolResponse(processedData);
         },
         { mcpAccessToken },
         args
@@ -307,11 +295,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
         more: z.boolean().optional(),
         offset: z.number().optional(),
       },
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        openWorldHint: true,
-      },
+      annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
       return withAnalytics(
@@ -352,15 +336,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           // Add readable datetime fields for timestamps
           const processedData = addReadableTimestamps(workouts);
 
-          return {
-            structuredContent: processedData,
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(processedData, null, 2),
-              },
-            ],
-          };
+          return toolResponse(processedData);
         },
         { mcpAccessToken },
         args
@@ -412,11 +388,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
         more: z.boolean().optional(),
         offset: z.number().optional(),
       },
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        openWorldHint: true,
-      },
+      annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
       return withAnalytics(
@@ -434,15 +406,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           // Add readable datetime fields for timestamps
           const processedData = addReadableTimestamps(activity);
 
-          return {
-            structuredContent: processedData,
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(processedData, null, 2),
-              },
-            ],
-          };
+          return toolResponse(processedData);
         },
         { mcpAccessToken },
         args
@@ -480,11 +444,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
       outputSchema: {
         series: z.array(z.object({}).passthrough()),
       },
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        openWorldHint: true,
-      },
+      annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
       return withAnalytics(
@@ -500,15 +460,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           // Add readable datetime fields for timestamps
           const processedData = addReadableTimestamps(intradayActivity);
 
-          return {
-            structuredContent: processedData,
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(processedData, null, 2),
-              },
-            ],
-          };
+          return toolResponse(processedData);
         },
         { mcpAccessToken },
         args

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { listHeartRecords, getHeartSignal } from "../withings/api.js";
 import { addReadableTimestamps } from "../utils/timestamp.js";
-import { withAnalytics } from "./index.js";
+import { withAnalytics, TOOL_ANNOTATIONS, toolResponse } from "./index.js";
 
 export function registerHeartTools(server: any, mcpAccessToken: string) {
   // Register list_heart_records tool
@@ -36,11 +36,7 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
         more: z.boolean().optional(),
         offset: z.number().optional(),
       },
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        openWorldHint: true,
-      },
+      annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
       return withAnalytics(
@@ -56,15 +52,7 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
           // Add readable datetime fields for timestamps
           const processedData = addReadableTimestamps(records);
 
-          return {
-            structuredContent: processedData,
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(processedData, null, 2),
-              },
-            ],
-          };
+          return toolResponse(processedData);
         },
         { mcpAccessToken },
         args
@@ -103,11 +91,7 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
         sampling_frequency: z.number(),
         wearposition: z.number().optional(),
       },
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        openWorldHint: true,
-      },
+      annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
       return withAnalytics(
@@ -120,15 +104,7 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
             args.with_intervals
           );
 
-          return {
-            structuredContent: signal,
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(signal, null, 2),
-              },
-            ],
-          };
+          return toolResponse(signal);
         },
         { mcpAccessToken }
       );
