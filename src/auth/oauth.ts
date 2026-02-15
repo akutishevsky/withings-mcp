@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import { getSupabaseClient } from "../db/supabase.js";
 import { createLogger } from "../utils/logger.js";
 import { rateLimit } from "../server/rate-limiter.js";
+import { encrypt, decrypt } from "../utils/encryption.js";
 
 const logger = createLogger({ component: "oauth" });
 
@@ -131,7 +132,7 @@ class OAuthStore {
 
     const { error } = await supabase.from("auth_codes").insert({
       code,
-      withings_code: data.withingsCode,
+      withings_code: encrypt(data.withingsCode),
       client_id: data.clientId || null,
       redirect_uri: data.redirectUri,
       code_challenge: data.codeChallenge || null,
@@ -167,7 +168,7 @@ class OAuthStore {
     const row = data as AuthCodeRow;
 
     return {
-      withingsCode: row.withings_code,
+      withingsCode: decrypt(row.withings_code),
       clientId: row.client_id || undefined,
       redirectUri: row.redirect_uri,
       codeChallenge: row.code_challenge || undefined,
