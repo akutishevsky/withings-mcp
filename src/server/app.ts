@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { readFile } from "node:fs/promises";
 import { createOAuthRouter } from "../auth/oauth.js";
@@ -45,6 +46,17 @@ export function createApp(config: ServerConfig) {
     // Permissions-Policy: Disable unnecessary browser features
     c.header("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
   });
+
+  // Request body size limit (1MB) to prevent memory exhaustion
+  app.use("*", bodyLimit({
+    maxSize: 1024 * 1024, // 1MB
+    onError: (c) => {
+      return c.json({
+        error: "payload_too_large",
+        error_description: "Request body exceeds maximum allowed size"
+      }, 413);
+    },
+  }));
 
   // Enable CORS with security restrictions
   // Allow native apps (no Origin header), localhost, and configured origins
