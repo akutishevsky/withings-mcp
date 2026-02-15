@@ -143,15 +143,21 @@ class OAuthStore {
     }
   }
 
-  async getAuthCode(code: string): Promise<AuthCode | null> {
+  /**
+   * Atomically consume an auth code: delete and return in one operation.
+   * Prevents replay attacks by ensuring a code can only be used once.
+   */
+  async consumeAuthCode(code: string): Promise<AuthCode | null> {
     const supabase = getSupabaseClient();
     const now = new Date().toISOString();
 
+    // Atomic delete + select: removes the row and returns it in one query
     const { data, error } = await supabase
       .from("auth_codes")
-      .select("*")
+      .delete()
       .eq("code", code)
       .gt("expires_at", now)
+      .select()
       .single();
 
     if (error || !data) {
@@ -166,19 +172,6 @@ class OAuthStore {
       redirectUri: row.redirect_uri,
       codeChallenge: row.code_challenge || undefined,
     };
-  }
-
-  async deleteAuthCode(code: string): Promise<void> {
-    const supabase = getSupabaseClient();
-
-    const { error } = await supabase
-      .from("auth_codes")
-      .delete()
-      .eq("code", code);
-
-    if (error) {
-      throw new Error(`Failed to delete auth code: ${error.message}`);
-    }
   }
 
   async registerClient(clientId: string, client: RegisteredClient): Promise<void> {
@@ -390,9 +383,10 @@ export function createOAuthRouter(config: OAuthConfig) {
       return c.json({ error: "unsupported_grant_type" }, 400);
     }
 
-    const authCodeData = await oauthStore.getAuthCode(code);
+    // Atomically consume the auth code (single-use per RFC 6749 Section 4.1.2)
+    const authCodeData = await oauthStore.consumeAuthCode(code);
     if (!authCodeData) {
-      logger.warn("Token exchange failed: invalid authorization code");
+      logger.warn("Token exchange failed: invalid, expired, or already-used authorization code");
       return c.json({ error: "invalid_grant" }, 400);
     }
 
@@ -452,9 +446,6 @@ export function createOAuthRouter(config: OAuthConfig) {
         withingsUserId: tokenData.body.userid,
         expiresAt: Date.now() + tokenData.body.expires_in * 1000,
       });
-
-      // Clean up auth code
-      await oauthStore.deleteAuthCode(code);
 
       logger.info("Token exchange completed successfully");
 
