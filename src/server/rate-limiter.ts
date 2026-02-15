@@ -9,82 +9,43 @@ interface RateLimitConfig {
   windowMs: number;
 }
 
-interface RateLimitRow {
-  identifier: string;
-  request_count: number;
-  reset_time: string;
-}
-
 class RateLimiter {
   async init(): Promise<void> {
     // No initialization needed - Supabase client is initialized separately
   }
 
   /**
-   * Check if a request should be rate limited
-   * Returns true if request should be allowed, false if rate limited
+   * Check if a request should be rate limited.
+   * Uses an atomic PostgreSQL function to prevent race conditions.
    */
   async checkLimit(
     identifier: string,
     config: RateLimitConfig
   ): Promise<{ allowed: boolean; remaining: number; resetTime: number }> {
     const supabase = getSupabaseClient();
-    const now = Date.now();
-    const nowIso = new Date(now).toISOString();
 
-    // Get current rate limit record
-    const { data } = await supabase
-      .from("rate_limits")
-      .select("*")
-      .eq("identifier", identifier)
-      .single();
+    const { data, error } = await supabase.rpc("check_rate_limit", {
+      p_identifier: identifier,
+      p_max_requests: config.maxRequests,
+      p_window_ms: config.windowMs,
+    }).single();
 
-    const current = data as RateLimitRow | null;
-
-    if (!current || new Date(current.reset_time).getTime() < now) {
-      // New window or expired window - create/update record
-      const resetTime = now + config.windowMs;
-      const resetTimeIso = new Date(resetTime).toISOString();
-
-      await supabase.from("rate_limits").upsert({
-        identifier,
-        request_count: 1,
-        reset_time: resetTimeIso,
-        updated_at: nowIso,
-      }, {
-        onConflict: "identifier",
-      });
-
+    if (error || !data) {
+      // On RPC failure, allow the request but log the error
+      logger.error("Rate limit RPC failed, allowing request", { error: error?.message });
       return {
         allowed: true,
-        remaining: config.maxRequests - 1,
-        resetTime,
+        remaining: config.maxRequests,
+        resetTime: Date.now() + config.windowMs,
       };
     }
 
-    const resetTime = new Date(current.reset_time).getTime();
-
-    if (current.request_count >= config.maxRequests) {
-      // Rate limit exceeded
-      return {
-        allowed: false,
-        remaining: 0,
-        resetTime,
-      };
-    }
-
-    // Increment count
-    await supabase
-      .from("rate_limits")
-      .update({
-        request_count: current.request_count + 1,
-        updated_at: nowIso,
-      })
-      .eq("identifier", identifier);
+    const result = data as { allowed: boolean; request_count: number; reset_time: string };
+    const resetTime = new Date(result.reset_time).getTime();
 
     return {
-      allowed: true,
-      remaining: config.maxRequests - current.request_count - 1,
+      allowed: result.allowed,
+      remaining: Math.max(0, config.maxRequests - result.request_count),
       resetTime,
     };
   }
