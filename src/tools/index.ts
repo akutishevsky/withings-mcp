@@ -34,6 +34,7 @@ export function registerAllTools(server: any, mcpAccessToken: string) {
  */
 interface ToolResponse {
   content: Array<{ type: string; text: string }>;
+  structuredContent?: unknown;
   isError?: boolean;
 }
 

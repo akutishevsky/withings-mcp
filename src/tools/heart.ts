@@ -8,6 +8,7 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
   server.registerTool(
     "list_heart_records",
     {
+      title: "Heart Records",
       description:
         "Get a list of ECG (electrocardiogram) records with Afib (atrial fibrillation) classification for a given time period. Returns ECG metadata including signal IDs, timestamps, heart rate, Afib detection results, and blood pressure measurements (if taken with BPM Core). Use the signal ID from this list with get_heart_signal to retrieve the full ECG waveform data. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
       inputSchema: {
@@ -30,6 +31,16 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
             "Pagination offset. Use value from previous response when more=true"
           ),
       },
+      outputSchema: {
+        series: z.array(z.object({}).passthrough()),
+        more: z.boolean().optional(),
+        offset: z.number().optional(),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: true,
+      },
     },
     async (args: any) => {
       return withAnalytics(
@@ -46,6 +57,7 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
           const processedData = addReadableTimestamps(records);
 
           return {
+            structuredContent: processedData,
             content: [
               {
                 type: "text",
@@ -64,6 +76,7 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
   server.registerTool(
     "get_heart_signal",
     {
+      title: "ECG Signal",
       description:
         "Get detailed ECG (electrocardiogram) signal data in micro-volts (μV) for a specific recording. Returns high-frequency waveform data with sampling information. Recording duration: BPM Core (20s), Move ECG/ScanWatch (30s). Sampling frequency: BPM Core (500 Hz), Move ECG/ScanWatch (300 Hz). First use list_heart_records to get the signal ID.",
       inputSchema: {
@@ -85,6 +98,16 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
             "Request features with inactive ones. Optional, defaults to false."
           ),
       },
+      outputSchema: {
+        signal: z.array(z.number()),
+        sampling_frequency: z.number(),
+        wearposition: z.number().optional(),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: true,
+      },
     },
     async (args: any) => {
       return withAnalytics(
@@ -98,6 +121,7 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
           );
 
           return {
+            structuredContent: signal,
             content: [
               {
                 type: "text",

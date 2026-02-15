@@ -8,6 +8,7 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
   server.registerTool(
     "list_stetho_records",
     {
+      title: "Stethoscope Records",
       description:
         "Get a list of stethoscope recordings for a given time period. Returns metadata including signal IDs, timestamps, device IDs, valve heart disease (VHD) indicators, and timezone information. Use the signal ID from this list with get_stetho_signal to retrieve the full audio signal data. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
       inputSchema: {
@@ -30,6 +31,16 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
             "Pagination offset. Use value from previous response when more=true"
           ),
       },
+      outputSchema: {
+        series: z.array(z.object({}).passthrough()),
+        more: z.boolean().optional(),
+        offset: z.number().optional(),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: true,
+      },
     },
     async (args: any) => {
       return withAnalytics(
@@ -46,6 +57,7 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
           const processedData = addReadableTimestamps(records);
 
           return {
+            structuredContent: processedData,
             content: [
               {
                 type: "text",
@@ -64,6 +76,7 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
   server.registerTool(
     "get_stetho_signal",
     {
+      title: "Stethoscope Signal",
       description:
         "Get detailed stethoscope audio signal data for a specific recording. Returns the raw audio signal array along with technical metadata including frequency, duration, format, size, resolution, channel information, device model, stethoscope position, and valve heart disease (VHD) indicators. First use list_stetho_records to get the signal ID.",
       inputSchema: {
@@ -73,6 +86,15 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
             "ID of the stethoscope signal to retrieve. Obtain this from list_stetho_records response."
           ),
       },
+      outputSchema: {
+        signal: z.array(z.number()),
+        sampling_frequency: z.number(),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: true,
+      },
     },
     async (args: any) => {
       return withAnalytics(
@@ -81,6 +103,7 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
           const signal = await getStethoSignal(mcpAccessToken, args.signalid);
 
           return {
+            structuredContent: signal,
             content: [
               {
                 type: "text",
