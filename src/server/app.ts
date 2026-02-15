@@ -22,6 +22,20 @@ const MCP_ENDPOINT = "/mcp";
 export function createApp(config: ServerConfig) {
   const app = new Hono();
 
+  // HTTPS redirect in production (behind reverse proxy)
+  app.use("*", async (c, next) => {
+    const proto = c.req.header("x-forwarded-proto");
+    const host = c.req.header("host") || "";
+    const isLocalhost = host.startsWith("localhost") || host.startsWith("127.0.0.1");
+
+    if (proto === "http" && !isLocalhost) {
+      const httpsUrl = `https://${host}${c.req.path}`;
+      return c.redirect(httpsUrl, 301);
+    }
+
+    await next();
+  });
+
   // Security headers middleware
   app.use("*", async (c, next) => {
     await next();
