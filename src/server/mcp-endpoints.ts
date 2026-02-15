@@ -19,6 +19,14 @@ export const handleMcpGet = async (c: any) => {
   // Check for existing session
   const existingSession = sessionManager.getSession(sessionId);
   if (existingSession) {
+    // Only allow the session owner to reconnect
+    if (existingSession.mcpToken !== mcpAccessToken) {
+      logger.warn("Session reconnect denied: token does not match session owner");
+      return c.json({
+        error: "forbidden",
+        error_description: "Token does not match session owner"
+      }, 403);
+    }
     logger.info("Closing existing MCP session to establish new connection");
     // Close existing transport if any
     await existingSession.transport.close();
@@ -76,8 +84,8 @@ export const handleMcpGet = async (c: any) => {
         // Connect server to transport
         await sessionServer.connect(transport);
 
-        // Store session
-        sessionManager.createSession(sessionId, transport);
+        // Store session with token binding
+        sessionManager.createSession(sessionId, transport, mcpAccessToken);
         logger.info("MCP session established via GET");
 
         // Handle connection close
@@ -189,8 +197,8 @@ export const handleMcpPost = async (c: any) => {
         // Connect server to transport
         await sessionServer.connect(transport);
 
-        // Store session
-        sessionManager.createSession(sessionId!, transport);
+        // Store session with token binding
+        sessionManager.createSession(sessionId!, transport, mcpToken);
         logger.info("MCP session established via POST");
 
         // Handle the initial message
@@ -244,6 +252,15 @@ export const handleMcpPost = async (c: any) => {
       error: "invalid_session",
       error_description: "Session not found or expired"
     }, 404);
+  }
+
+  // Verify the bearer token matches the one used to create the session
+  if (session.mcpToken !== mcpToken) {
+    logger.warn("Session token mismatch: bearer token does not match session owner");
+    return c.json({
+      error: "forbidden",
+      error_description: "Token does not match session owner"
+    }, 403);
   }
 
   try {
