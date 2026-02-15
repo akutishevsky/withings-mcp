@@ -27,7 +27,7 @@
   "homepage": "https://github.com/akutishevsky/withings-mcp#readme",
   "dependencies": {
     "@hono/node-server": "^1.13.7",
-    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "@supabase/supabase-js": "^2.45.0",
     "hono": "^4.10.5",
     "zod": "^3.25.76",
