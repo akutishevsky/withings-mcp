@@ -66,9 +66,15 @@ src/
 │   └── timestamp.ts         # Timezone-aware timestamp conversion utilities
 └── index.ts                 # Main entry point (initializes Supabase, stores & creates app)
 
+public/
+└── styles/                      # External CSS (no unsafe-inline CSP)
+    ├── index.css               # Landing page styles
+    └── health.css              # Health check page styles
+
 supabase/
 └── migrations/
-    └── 001_initial_schema.sql  # Database schema (tables, indexes)
+    ├── 001_initial_schema.sql  # Database schema (tables, indexes)
+    └── 004_atomic_rate_limit.sql # Atomic rate limit PostgreSQL function
 ```
 
 ### Logging
@@ -178,10 +184,16 @@ The server implements a **double OAuth flow** to bridge MCP clients with Withing
 
 **Flow sequence**:
 - MCP client discovers server via `/.well-known/oauth-authorization-server`
-- Client initiates OAuth at `/authorize` → server redirects to Withings
+- Client initiates OAuth at `/authorize` → server validates `client_id` against registered clients and `redirect_uri` against the client's registered URIs, then redirects to Withings
 - Withings redirects back to `/callback` → server generates auth code
-- Client exchanges code at `/token` → server exchanges Withings code and returns MCP access token
+- Client exchanges code at `/token` → auth code is atomically consumed (single-use per RFC 6749), server exchanges Withings code and returns MCP access token
 - MCP access tokens map to Withings tokens in storage
+
+**OAuth Security**:
+- **Redirect URI validation**: `/authorize` requires a registered `client_id` and validates `redirect_uri` against the client's registered URIs to prevent open redirect attacks
+- **Single-use auth codes**: Auth codes are atomically consumed via `DELETE ... RETURNING` to prevent replay attacks
+- **Auth code encryption**: Withings authorization codes are encrypted at rest using AES-256-GCM before storage in `auth_codes` table
+- **Startup validation**: Server fails fast if required environment variables (`WITHINGS_CLIENT_ID`, `WITHINGS_CLIENT_SECRET`, `WITHINGS_REDIRECT_URI`) are missing
 
 **Token Lifetimes**:
 - **MCP Access Token**: Valid for 30 days (returned to Claude Desktop with `expires_in: 2592000`)
@@ -199,13 +211,18 @@ The server uses **SSE (Server-Sent Events)** for MCP communication per the speci
 - **Endpoint**: The MCP endpoint is always `/mcp` (defined as `MCP_ENDPOINT` constant in src/server/app.ts)
 
 **Session Management** (src/transport/mcp-transport.ts):
+- Sessions are bound to the bearer token that created them (`mcpToken` field in `MCPSession`)
+- POST requests to existing sessions verify the bearer token matches the session owner (returns 403 on mismatch)
+- GET reconnects to existing sessions also verify token ownership
 - Sessions timeout after 30 minutes of inactivity
 - Heartbeat pings sent every 15 seconds to keep connections alive
 - Sessions cleaned up automatically every minute
 
-**Implementation** (src/server/mcp-endpoints.ts):
+**Request Validation** (src/server/mcp-endpoints.ts):
 - `handleMcpGet()`: Creates SSE stream, registers tools, connects MCP server
 - `handleMcpPost()`: Handles initial POST with SSE or forwards to existing session
+- All incoming JSON-RPC messages are validated against the JSON-RPC 2.0 specification (requires `jsonrpc: "2.0"`, valid `method`/`id` types) before forwarding to the transport layer
+- Request body size is limited to 1MB globally via Hono `bodyLimit()` middleware
 
 ### Data Storage
 
@@ -217,6 +234,7 @@ Uses **Supabase PostgreSQL** (@supabase/supabase-js) for persistent storage:
 - `auth_codes`: Authorization codes (10 min TTL)
 - `registered_clients`: Dynamic client registration (no TTL)
 - `rate_limits`: Rate limiting counters (dynamic window TTL)
+- `check_rate_limit()`: Atomic PostgreSQL function for race-condition-free rate limiting (uses `SELECT ... FOR UPDATE`)
 
 **Token Store** (src/auth/token-store.ts):
 - Maps MCP tokens → Withings tokens (access, refresh, userId, expiry)
@@ -227,7 +245,8 @@ Uses **Supabase PostgreSQL** (@supabase/supabase-js) for persistent storage:
 
 **OAuth Store** (src/auth/oauth.ts):
 - OAuth sessions (10min TTL): `oauth_sessions` table
-- Auth codes (10min TTL): `auth_codes` table
+- Auth codes (10min TTL): `auth_codes` table (Withings code encrypted at rest)
+- Auth codes are consumed atomically via `consumeAuthCode()` (DELETE + SELECT in one query) to prevent replay
 - Registered clients (no TTL): `registered_clients` table
 
 **TTL Implementation**:
@@ -471,7 +490,15 @@ The OAuth implementation supports PKCE (Proof Key for Code Exchange) for enhance
 
 ### Session Isolation
 
-Each SSE connection creates a **separate McpServer instance** (src/server/mcp-endpoints.ts). This ensures tools and state are isolated per session. Tools are registered per-session via `registerAllTools()` from src/tools/index.ts.
+Each SSE connection creates a **separate McpServer instance** (src/server/mcp-endpoints.ts). This ensures tools and state are isolated per session. Tools are registered per-session via `registerAllTools()` from src/tools/index.ts. Sessions are bound to the bearer token used at creation, preventing cross-user session access.
+
+### HTTP Security
+
+- **HTTPS redirect**: Production requests via `x-forwarded-proto: http` are redirected to HTTPS (localhost excluded)
+- **Body size limit**: 1MB global limit via Hono `bodyLimit()` middleware
+- **CORS**: No `Access-Control-Allow-Origin` header for requests without an Origin header; only localhost and configured origins are allowed
+- **CSP**: External stylesheets with `style-src 'self'` (no `unsafe-inline`)
+- **Security headers**: HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy
 
 ### Transport Lifecycle
 

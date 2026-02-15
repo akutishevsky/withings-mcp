@@ -1,6 +1,6 @@
 {
   "name": "withings-mcp",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "MCP server for Withings health data integration",
   "type": "module",
   "main": "build/index.js",

@@ -115,6 +115,7 @@ export class HonoSSETransport implements Transport {
 interface MCPSession {
   transport: HonoSSETransport;
   sessionId: string;
+  mcpToken: string;
   createdAt: number;
   lastActivity: number;
 }
@@ -123,10 +124,11 @@ class SessionManager {
   private sessions = new Map<string, MCPSession>();
   private readonly SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
-  createSession(sessionId: string, transport: HonoSSETransport): void {
+  createSession(sessionId: string, transport: HonoSSETransport, mcpToken: string): void {
     this.sessions.set(sessionId, {
       transport,
       sessionId,
+      mcpToken,
       createdAt: Date.now(),
       lastActivity: Date.now(),
     });

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { readFile } from "node:fs/promises";
 import { createOAuthRouter } from "../auth/oauth.js";
@@ -20,6 +21,20 @@ const MCP_ENDPOINT = "/mcp";
  */
 export function createApp(config: ServerConfig) {
   const app = new Hono();
+
+  // HTTPS redirect in production (behind reverse proxy)
+  app.use("*", async (c, next) => {
+    const proto = c.req.header("x-forwarded-proto");
+    const host = c.req.header("host") || "";
+    const isLocalhost = host.startsWith("localhost") || host.startsWith("127.0.0.1");
+
+    if (proto === "http" && !isLocalhost) {
+      const httpsUrl = `https://${host}${c.req.path}`;
+      return c.redirect(httpsUrl, 301);
+    }
+
+    await next();
+  });
 
   // Security headers middleware
   app.use("*", async (c, next) => {
@@ -46,13 +61,25 @@ export function createApp(config: ServerConfig) {
     c.header("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
   });
 
+  // Request body size limit (1MB) to prevent memory exhaustion
+  app.use("*", bodyLimit({
+    maxSize: 1024 * 1024, // 1MB
+    onError: (c) => {
+      return c.json({
+        error: "payload_too_large",
+        error_description: "Request body exceeds maximum allowed size"
+      }, 413);
+    },
+  }));
+
   // Enable CORS with security restrictions
   // Allow native apps (no Origin header), localhost, and configured origins
   app.use("*", cors({
     origin: (origin) => {
-      // Allow requests with no Origin header (native apps like Claude Desktop)
+      // No Origin header = native app or server-side request (not browser).
+      // CORS doesn't apply, so skip adding CORS headers entirely.
       if (!origin) {
-        return "*";
+        return null;
       }
 
       // Allow localhost for development
@@ -77,12 +104,26 @@ export function createApp(config: ServerConfig) {
     maxAge: 86400,
   }));
 
+  // Serve static CSS files
+  app.get("/styles/:file", async (c) => {
+    const fileName = c.req.param("file");
+    // Only allow .css files, no path traversal
+    if (!fileName.match(/^[a-z0-9-]+\.css$/)) {
+      return c.notFound();
+    }
+    try {
+      const css = await readFile(`./public/styles/${fileName}`, "utf-8");
+      return c.body(css, 200, { "Content-Type": "text/css" });
+    } catch {
+      return c.notFound();
+    }
+  });
+
   // Root landing page
   app.get("/", async (c) => {
     try {
       const html = await readFile("./public/index.html", "utf-8");
-      // Override CSP to allow inline styles for this landing page
-      c.header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'");
+      c.header("Content-Security-Policy", "default-src 'none'; style-src 'self'; frame-ancestors 'none'");
       return c.html(html);
     } catch {
       return c.notFound();
@@ -134,8 +175,7 @@ export function createApp(config: ServerConfig) {
   app.get("/health", async (c) => {
     try {
       const html = await readFile("./public/health.html", "utf-8");
-      // Override CSP to allow inline styles and Google Analytics script
-      c.header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline' https://www.googletagmanager.com; connect-src https://www.google-analytics.com; frame-ancestors 'none'");
+      c.header("Content-Security-Policy", "default-src 'none'; style-src 'self'; frame-ancestors 'none'");
       return c.html(html);
     } catch {
       return c.notFound();

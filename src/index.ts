@@ -20,11 +20,24 @@ await tokenStore.init();
 await initOAuthStore();
 await initRateLimiter();
 
+// Validate required environment variables at startup
+const requiredEnvVars = [
+  "WITHINGS_CLIENT_ID",
+  "WITHINGS_CLIENT_SECRET",
+  "WITHINGS_REDIRECT_URI",
+] as const;
+
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    throw new Error(`Missing required environment variable: ${envVar}`);
+  }
+}
+
 // OAuth configuration from environment
 const oauthConfig = {
-  clientId: process.env.WITHINGS_CLIENT_ID || "",
-  clientSecret: process.env.WITHINGS_CLIENT_SECRET || "",
-  redirectUri: process.env.WITHINGS_REDIRECT_URI || "http://localhost:3000/callback",
+  clientId: process.env.WITHINGS_CLIENT_ID!,
+  clientSecret: process.env.WITHINGS_CLIENT_SECRET!,
+  redirectUri: process.env.WITHINGS_REDIRECT_URI!,
 };
 
 // Set global OAuth config

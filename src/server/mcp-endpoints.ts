@@ -7,6 +7,44 @@ import { createLogger } from "../utils/logger.js";
 const logger = createLogger({ component: "mcp-endpoints" });
 
 /**
+ * Validate that a parsed JSON object conforms to the JSON-RPC 2.0 message structure.
+ * Checks for required fields and basic type correctness.
+ */
+function isValidJsonRpcMessage(msg: unknown): msg is JSONRPCMessage {
+  if (typeof msg !== "object" || msg === null) {
+    return false;
+  }
+
+  const obj = msg as Record<string, unknown>;
+
+  // Must have jsonrpc: "2.0"
+  if (obj.jsonrpc !== "2.0") {
+    return false;
+  }
+
+  // A request or notification must have a string method
+  if ("method" in obj) {
+    if (typeof obj.method !== "string") {
+      return false;
+    }
+    // If id is present, it must be a string, number, or null
+    if ("id" in obj && obj.id !== null && typeof obj.id !== "string" && typeof obj.id !== "number") {
+      return false;
+    }
+    return true;
+  }
+
+  // A response must have an id and either result or error
+  if ("id" in obj) {
+    if ("result" in obj || "error" in obj) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * GET handler for /mcp endpoint - Initiates SSE stream for MCP
  */
 export const handleMcpGet = async (c: any) => {
@@ -19,6 +57,14 @@ export const handleMcpGet = async (c: any) => {
   // Check for existing session
   const existingSession = sessionManager.getSession(sessionId);
   if (existingSession) {
+    // Only allow the session owner to reconnect
+    if (existingSession.mcpToken !== mcpAccessToken) {
+      logger.warn("Session reconnect denied: token does not match session owner");
+      return c.json({
+        error: "forbidden",
+        error_description: "Token does not match session owner"
+      }, 403);
+    }
     logger.info("Closing existing MCP session to establish new connection");
     // Close existing transport if any
     await existingSession.transport.close();
@@ -60,7 +106,7 @@ export const handleMcpGet = async (c: any) => {
       const sessionServer = new McpServer(
         {
           name: "withings-mcp",
-          version: "1.2.0",
+          version: "1.3.0",
         },
         {
           capabilities: {
@@ -76,8 +122,8 @@ export const handleMcpGet = async (c: any) => {
         // Connect server to transport
         await sessionServer.connect(transport);
 
-        // Store session
-        sessionManager.createSession(sessionId, transport);
+        // Store session with token binding
+        sessionManager.createSession(sessionId, transport, mcpAccessToken);
         logger.info("MCP session established via GET");
 
         // Handle connection close
@@ -137,8 +183,16 @@ export const handleMcpPost = async (c: any) => {
   if (!sessionId) {
     sessionId = crypto.randomUUID();
 
-    // Get the JSON-RPC message first
-    const message = await c.req.json() as JSONRPCMessage;
+    // Get and validate the JSON-RPC message
+    const rawMessage = await c.req.json();
+    if (!isValidJsonRpcMessage(rawMessage)) {
+      logger.warn("Invalid JSON-RPC message received on initial POST");
+      return c.json({
+        error: "invalid_request",
+        error_description: "Invalid JSON-RPC 2.0 message"
+      }, 400);
+    }
+    const message = rawMessage;
 
     // Create SSE stream for response
     const { readable, writable } = new TransformStream();
@@ -174,7 +228,7 @@ export const handleMcpPost = async (c: any) => {
         const sessionServer = new McpServer(
           {
             name: "withings-mcp",
-            version: "1.2.0",
+            version: "1.3.0",
           },
           {
             capabilities: {
@@ -189,8 +243,8 @@ export const handleMcpPost = async (c: any) => {
         // Connect server to transport
         await sessionServer.connect(transport);
 
-        // Store session
-        sessionManager.createSession(sessionId!, transport);
+        // Store session with token binding
+        sessionManager.createSession(sessionId!, transport, mcpToken);
         logger.info("MCP session established via POST");
 
         // Handle the initial message
@@ -246,11 +300,27 @@ export const handleMcpPost = async (c: any) => {
     }, 404);
   }
 
-  try {
-    const message = await c.req.json() as JSONRPCMessage;
+  // Verify the bearer token matches the one used to create the session
+  if (session.mcpToken !== mcpToken) {
+    logger.warn("Session token mismatch: bearer token does not match session owner");
+    return c.json({
+      error: "forbidden",
+      error_description: "Token does not match session owner"
+    }, 403);
+  }
 
-    // Forward message to transport
-    await session.transport.handleIncomingMessage(message);
+  try {
+    const rawMessage = await c.req.json();
+    if (!isValidJsonRpcMessage(rawMessage)) {
+      logger.warn("Invalid JSON-RPC message received for existing session");
+      return c.json({
+        error: "invalid_request",
+        error_description: "Invalid JSON-RPC 2.0 message"
+      }, 400);
+    }
+
+    // Forward validated message to transport
+    await session.transport.handleIncomingMessage(rawMessage);
 
     // Return 202 Accepted (response will come via SSE)
     return c.body(null, 202);
