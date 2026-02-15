@@ -62,9 +62,10 @@ export function createApp(config: ServerConfig) {
   // Allow native apps (no Origin header), localhost, and configured origins
   app.use("*", cors({
     origin: (origin) => {
-      // Allow requests with no Origin header (native apps like Claude Desktop)
+      // No Origin header = native app or server-side request (not browser).
+      // CORS doesn't apply, so skip adding CORS headers entirely.
       if (!origin) {
-        return "*";
+        return null;
       }
 
       // Allow localhost for development
