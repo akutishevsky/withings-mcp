@@ -1,5 +1,14 @@
 # Withings MCP Server
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=akutishevsky_withings-mcp&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=akutishevsky_withings-mcp)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=akutishevsky_withings-mcp&metric=bugs)](https://sonarcloud.io/summary/new_code?id=akutishevsky_withings-mcp)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=akutishevsky_withings-mcp&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=akutishevsky_withings-mcp)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=akutishevsky_withings-mcp&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=akutishevsky_withings-mcp)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=akutishevsky_withings-mcp&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=akutishevsky_withings-mcp)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=akutishevsky_withings-mcp&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=akutishevsky_withings-mcp)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=akutishevsky_withings-mcp&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=akutishevsky_withings-mcp)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=akutishevsky_withings-mcp&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=akutishevsky_withings-mcp)
+
 A Model Context Protocol (MCP) server that brings your Withings health data into Claude. Access your sleep patterns, body measurements, workouts, heart data, and more through natural conversation.
 
 **🔒 Privacy First**: This is my personal project, and the repository is intentionally public to demonstrate transparency. The code shows that **no personal information is logged or stored maliciously**. All sensitive data (tokens, user IDs) is encrypted at rest and automatically redacted from logs. You can review the entire codebase to verify this commitment to privacy.
