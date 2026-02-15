@@ -104,12 +104,26 @@ export function createApp(config: ServerConfig) {
     maxAge: 86400,
   }));
 
+  // Serve static CSS files
+  app.get("/styles/:file", async (c) => {
+    const fileName = c.req.param("file");
+    // Only allow .css files, no path traversal
+    if (!fileName.match(/^[a-z0-9-]+\.css$/)) {
+      return c.notFound();
+    }
+    try {
+      const css = await readFile(`./public/styles/${fileName}`, "utf-8");
+      return c.body(css, 200, { "Content-Type": "text/css" });
+    } catch {
+      return c.notFound();
+    }
+  });
+
   // Root landing page
   app.get("/", async (c) => {
     try {
       const html = await readFile("./public/index.html", "utf-8");
-      // Override CSP to allow inline styles for this landing page
-      c.header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'");
+      c.header("Content-Security-Policy", "default-src 'none'; style-src 'self'; frame-ancestors 'none'");
       return c.html(html);
     } catch {
       return c.notFound();
@@ -161,7 +175,7 @@ export function createApp(config: ServerConfig) {
   app.get("/health", async (c) => {
     try {
       const html = await readFile("./public/health.html", "utf-8");
-      c.header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'");
+      c.header("Content-Security-Policy", "default-src 'none'; style-src 'self'; frame-ancestors 'none'");
       return c.html(html);
     } catch {
       return c.notFound();
