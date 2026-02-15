@@ -4,13 +4,14 @@ import {
   addReadableTimestamps,
   addReadableNightEvents,
 } from "../utils/timestamp.js";
-import { withAnalytics } from "./index.js";
+import { withAnalytics, TOOL_ANNOTATIONS, toolResponse } from "./index.js";
 
 export function registerSleepTools(server: any, mcpAccessToken: string) {
   // Sleep v2 - Get: High-frequency sleep data with timestamps
   server.registerTool(
     "get_sleep",
     {
+      title: "Sleep Data",
       description:
         "Get high-frequency sleep data captured during sleep, including sleep stages and health metrics at minute-level resolution. Use this for detailed analysis of sleep patterns. For aggregated summaries, use get_sleep_summary instead. Note: If startdate and enddate are separated by more than 24h, only the first 24h after startdate will be returned. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
       inputSchema: {
@@ -31,6 +32,10 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
             "Comma-separated list of data fields to return. Available fields: 'hr' (heart rate bpm), 'rr' (respiration rate breaths/min), 'snoring' (total snoring seconds), 'sdnn_1' (HRV standard deviation ms), 'rmssd' (HRV root mean square ms), 'hrv_quality' (HRV quality score), 'mvt_score' (movement intensity 0-255, Sleep Analyzer only), 'chest_movement_rate' (events/min), 'withings_index' (breathing events/hour for Sleep Rx), 'breathing_sounds' (breathing sounds tracked in seconds). If not specified, all available fields are returned."
           ),
       },
+      outputSchema: {
+        series: z.array(z.object({}).passthrough()),
+      },
+      annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
       return withAnalytics(
@@ -46,14 +51,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
           // Add readable datetime fields for timestamps
           const processedData = addReadableTimestamps(sleepData);
 
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(processedData, null, 2),
-              },
-            ],
-          };
+          return toolResponse(processedData);
         },
         { mcpAccessToken },
         args
@@ -65,6 +63,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
   server.registerTool(
     "get_sleep_summary",
     {
+      title: "Sleep Summary",
       description:
         "Get aggregated sleep activity summaries for specified date range. Returns comprehensive sleep metrics including duration, stages, quality scores, heart rate, breathing analysis, and sleep apnea indicators. Use this for daily/weekly sleep reports. For detailed minute-by-minute data, use get_sleep instead. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
       inputSchema: {
@@ -101,6 +100,11 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
               "If not specified, all available fields are returned."
           ),
       },
+      outputSchema: {
+        series: z.array(z.object({}).passthrough()),
+        more: z.boolean().optional(),
+      },
+      annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
       return withAnalytics(
@@ -124,14 +128,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
             );
           }
 
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(processedData, null, 2),
-              },
-            ],
-          };
+          return toolResponse(processedData);
         },
         { mcpAccessToken },
         args

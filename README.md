@@ -262,7 +262,7 @@ Go back to your Withings developer app and update the redirect URI to match your
 
 Configure your MCP client with the following connection details:
 - **Server URL**: `https://your-domain.com`
-- **Transport**: Server-Sent Events (SSE)
+- **Transport**: Streamable HTTP
 - **Endpoint**: `/mcp`
 - **Authentication**: OAuth 2.0
 - **Discovery URL**: `/.well-known/oauth-authorization-server`
@@ -297,7 +297,6 @@ src/
 ├── db/                # Supabase client & cleanup scheduler
 ├── server/            # Hono app, MCP endpoints, middleware
 ├── tools/             # MCP tools for Withings API (sleep, measure, user, heart, stetho)
-├── transport/         # Custom SSE transport for MCP
 ├── withings/          # Withings API client
 ├── utils/             # Logger and encryption utilities
 └── index.ts           # Main entry point

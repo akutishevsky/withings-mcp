@@ -30,10 +30,30 @@ export function registerAllTools(server: any, mcpAccessToken: string) {
 }
 
 /**
+ * Shared annotations for all Withings tools (read-only API queries)
+ */
+export const TOOL_ANNOTATIONS = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  openWorldHint: true,
+} as const;
+
+/**
+ * Build a tool response with both structuredContent and text content
+ */
+export function toolResponse(data: unknown): ToolResponse {
+  return {
+    structuredContent: data,
+    content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+  };
+}
+
+/**
  * MCP tool response type
  */
 interface ToolResponse {
   content: Array<{ type: string; text: string }>;
+  structuredContent?: unknown;
   isError?: boolean;
 }
 

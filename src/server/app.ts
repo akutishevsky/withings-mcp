@@ -4,7 +4,7 @@ import { cors } from "hono/cors";
 import { readFile } from "node:fs/promises";
 import { createOAuthRouter } from "../auth/oauth.js";
 import { authenticateBearer } from "./middleware.js";
-import { handleMcpGet, handleMcpPost } from "./mcp-endpoints.js";
+import { handleMcp } from "./mcp-endpoints.js";
 
 export interface ServerConfig {
   oauthConfig: {
@@ -97,9 +97,9 @@ export function createApp(config: ServerConfig) {
       // Reject all other origins
       return null;
     },
-    allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "Mcp-Session-Id", "Accept"],
-    exposeHeaders: ["Mcp-Session-Id", "Content-Type"],
+    allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization", "Mcp-Session-Id", "Mcp-Protocol-Version", "Last-Event-ID", "Accept"],
+    exposeHeaders: ["Mcp-Session-Id", "Mcp-Protocol-Version", "Content-Type"],
     credentials: false,
     maxAge: 86400,
   }));
@@ -140,9 +140,8 @@ export function createApp(config: ServerConfig) {
     return c.redirect(url.toString());
   });
 
-  // MCP endpoints - GET and POST
-  app.get(MCP_ENDPOINT, authenticateBearer, handleMcpGet);
-  app.post(MCP_ENDPOINT, authenticateBearer, handleMcpPost);
+  // MCP endpoint — SDK transport handles GET, POST, DELETE internally
+  app.all(MCP_ENDPOINT, authenticateBearer, handleMcp);
 
   // OAuth metadata discovery endpoint
   app.get("/.well-known/oauth-authorization-server", (c) => {
