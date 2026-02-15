@@ -7,6 +7,44 @@ import { createLogger } from "../utils/logger.js";
 const logger = createLogger({ component: "mcp-endpoints" });
 
 /**
+ * Validate that a parsed JSON object conforms to the JSON-RPC 2.0 message structure.
+ * Checks for required fields and basic type correctness.
+ */
+function isValidJsonRpcMessage(msg: unknown): msg is JSONRPCMessage {
+  if (typeof msg !== "object" || msg === null) {
+    return false;
+  }
+
+  const obj = msg as Record<string, unknown>;
+
+  // Must have jsonrpc: "2.0"
+  if (obj.jsonrpc !== "2.0") {
+    return false;
+  }
+
+  // A request or notification must have a string method
+  if ("method" in obj) {
+    if (typeof obj.method !== "string") {
+      return false;
+    }
+    // If id is present, it must be a string, number, or null
+    if ("id" in obj && obj.id !== null && typeof obj.id !== "string" && typeof obj.id !== "number") {
+      return false;
+    }
+    return true;
+  }
+
+  // A response must have an id and either result or error
+  if ("id" in obj) {
+    if ("result" in obj || "error" in obj) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * GET handler for /mcp endpoint - Initiates SSE stream for MCP
  */
 export const handleMcpGet = async (c: any) => {
@@ -145,8 +183,16 @@ export const handleMcpPost = async (c: any) => {
   if (!sessionId) {
     sessionId = crypto.randomUUID();
 
-    // Get the JSON-RPC message first
-    const message = await c.req.json() as JSONRPCMessage;
+    // Get and validate the JSON-RPC message
+    const rawMessage = await c.req.json();
+    if (!isValidJsonRpcMessage(rawMessage)) {
+      logger.warn("Invalid JSON-RPC message received on initial POST");
+      return c.json({
+        error: "invalid_request",
+        error_description: "Invalid JSON-RPC 2.0 message"
+      }, 400);
+    }
+    const message = rawMessage;
 
     // Create SSE stream for response
     const { readable, writable } = new TransformStream();
@@ -264,10 +310,17 @@ export const handleMcpPost = async (c: any) => {
   }
 
   try {
-    const message = await c.req.json() as JSONRPCMessage;
+    const rawMessage = await c.req.json();
+    if (!isValidJsonRpcMessage(rawMessage)) {
+      logger.warn("Invalid JSON-RPC message received for existing session");
+      return c.json({
+        error: "invalid_request",
+        error_description: "Invalid JSON-RPC 2.0 message"
+      }, 400);
+    }
 
-    // Forward message to transport
-    await session.transport.handleIncomingMessage(message);
+    // Forward validated message to transport
+    await session.transport.handleIncomingMessage(rawMessage);
 
     // Return 202 Accepted (response will come via SSE)
     return c.body(null, 202);
