@@ -106,7 +106,7 @@ export const handleMcpGet = async (c: any) => {
       const sessionServer = new McpServer(
         {
           name: "withings-mcp",
-          version: "1.2.0",
+          version: "1.3.0",
         },
         {
           capabilities: {
@@ -228,7 +228,7 @@ export const handleMcpPost = async (c: any) => {
         const sessionServer = new McpServer(
           {
             name: "withings-mcp",
-            version: "1.2.0",
+            version: "1.3.0",
           },
           {
             capabilities: {
