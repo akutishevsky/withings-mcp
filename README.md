@@ -33,6 +33,8 @@ A Model Context Protocol (MCP) server that brings your Withings health data into
   - [Project Structure](#project-structure)
 - [Security Features](#security-features)
   - [Token Encryption](#token-encryption)
+  - [OAuth Hardening](#oauth-hardening)
+  - [Transport Security](#transport-security)
   - [Privacy-Safe Logging](#privacy-safe-logging)
 - [Contributing](#contributing)
 - [License](#license)
@@ -126,10 +128,11 @@ Try asking Claude:
 
 ### Privacy & Security
 
-- **Encrypted tokens**: All authentication tokens are encrypted using AES-256-GCM before storage
+- **Encrypted tokens**: All authentication tokens and authorization codes are encrypted using AES-256-GCM before storage
 - **No logging of personal data**: The code is public - you can verify that no sensitive information is logged
 - **Automatic redaction**: All user IDs, tokens, and credentials are automatically redacted from system logs
-- **OAuth 2.0**: Industry-standard secure authentication with Withings
+- **OAuth 2.0**: Industry-standard secure authentication with PKCE support and redirect URI validation
+- **Session security**: MCP sessions are bound to the authenticated user, preventing cross-user access
 - **You're in control**: Revoke access anytime from your Withings account settings
 
 ---
@@ -300,7 +303,7 @@ See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
 
 ### Token Encryption
 
-All Withings access and refresh tokens are encrypted at rest using **AES-256-GCM**:
+All Withings access tokens, refresh tokens, and authorization codes are encrypted at rest using **AES-256-GCM**:
 
 - **Algorithm**: AES-256-GCM (authenticated encryption)
 - **Key Derivation**: PBKDF2 with 100,000 iterations
@@ -311,6 +314,22 @@ All Withings access and refresh tokens are encrypted at rest using **AES-256-GCM
 - Randomly generated (use `npm run generate-secret`)
 - Secure and never committed to version control
 - Consistent across server restarts
+
+### OAuth Hardening
+
+- **Redirect URI validation**: The `/authorize` endpoint validates `redirect_uri` against the registered client's allowed URIs, preventing open redirect attacks
+- **Single-use auth codes**: Authorization codes are atomically consumed to prevent replay attacks (per RFC 6749)
+- **PKCE support**: SHA-256 code challenge method for enhanced security
+- **Startup validation**: Server refuses to start if required environment variables are missing
+
+### Transport Security
+
+- **Session-token binding**: MCP sessions are bound to the bearer token that created them, preventing cross-user session hijacking
+- **JSON-RPC validation**: All incoming messages are validated against the JSON-RPC 2.0 specification before processing
+- **Request body limits**: 1MB global limit to prevent memory exhaustion
+- **HTTPS redirect**: HTTP requests are automatically redirected to HTTPS in production
+- **Strict CSP**: Content Security Policy with no `unsafe-inline` directives
+- **Atomic rate limiting**: PostgreSQL function with row-level locking prevents race conditions
 
 ### Privacy-Safe Logging
 
