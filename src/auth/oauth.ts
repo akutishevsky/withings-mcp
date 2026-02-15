@@ -291,6 +291,23 @@ export function createOAuthRouter(config: OAuthConfig) {
       return c.json({ error: "invalid_request", error_description: "state parameter is required for CSRF protection" }, 400);
     }
 
+    // Validate redirect_uri against registered client
+    if (!clientId) {
+      logger.warn("OAuth authorization failed: missing client_id");
+      return c.json({ error: "invalid_request", error_description: "client_id is required" }, 400);
+    }
+
+    const registeredClient = await oauthStore.getClient(clientId);
+    if (!registeredClient) {
+      logger.warn("OAuth authorization failed: unregistered client_id");
+      return c.json({ error: "invalid_client", error_description: "client_id is not registered" }, 400);
+    }
+
+    if (!registeredClient.redirectUris.includes(redirectUri)) {
+      logger.warn("OAuth authorization failed: redirect_uri not registered for client");
+      return c.json({ error: "invalid_request", error_description: "redirect_uri is not registered for this client" }, 400);
+    }
+
     logger.info("Starting OAuth authorization flow");
 
     // Generate internal state for Withings OAuth
