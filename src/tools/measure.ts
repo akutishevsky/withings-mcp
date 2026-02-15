@@ -193,11 +193,6 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
             "Pagination offset. Use value from previous response when more=1"
           ),
       },
-      outputSchema: {
-        measuregrps: z.array(z.object({}).passthrough()),
-        more: z.number().optional(),
-        offset: z.number().optional(),
-      },
       annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
@@ -290,11 +285,6 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
             "Comma-separated list of data fields to return. Available fields: calories=Active calories(Kcal), intensity=Workout intensity(0-100), manual_distance=User-entered distance(m), manual_calories=User-entered calories(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec), pause_duration=User pause time(sec), algo_pause_duration=Device-detected pause time(sec), spo2_average=Average SpO2(%), steps=Step count, distance=Distance(m), elevation=Floors climbed, pool_laps=Pool lap count, strokes=Stroke count, pool_length=Pool length(m). Defaults to all fields."
           ),
       },
-      outputSchema: {
-        series: z.array(z.object({}).passthrough()),
-        more: z.boolean().optional(),
-        offset: z.number().optional(),
-      },
       annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
@@ -383,11 +373,6 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
             "Comma-separated list of data fields to return. Available fields: steps=Number of steps, distance=Distance travelled(m), elevation=Floors climbed, soft=Soft activity duration(sec), moderate=Moderate activity duration(sec), intense=Intense activity duration(sec), active=Sum of intense and moderate durations(sec), calories=Active calories burned(Kcal), totalcalories=Total calories burned(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec). If not specified, all fields are returned."
           ),
       },
-      outputSchema: {
-        activities: z.array(z.object({}).passthrough()),
-        more: z.boolean().optional(),
-        offset: z.number().optional(),
-      },
       annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
@@ -440,9 +425,6 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           .describe(
             "Comma-separated list of data fields to return. Available fields: steps=Number of steps, elevation=Floors climbed, calories=Active calories burned(Kcal), distance=Distance travelled(m), stroke=Number of strokes, pool_lap=Number of pool laps, duration=Activity duration(sec), heart_rate=Measured heart rate(bpm), spo2_auto=SpO2 percentage, rmssd=HRV-Root mean square of successive differences(ms), sdnn1=HRV-Standard deviation over 1 minute(ms), hrv_quality=HRV quality score. If not specified, all fields are returned."
           ),
-      },
-      outputSchema: {
-        series: z.array(z.object({}).passthrough()),
       },
       annotations: TOOL_ANNOTATIONS,
     },

@@ -39,11 +39,10 @@ export const TOOL_ANNOTATIONS = {
 } as const;
 
 /**
- * Build a tool response with both structuredContent and text content
+ * Build a tool response with text content
  */
 export function toolResponse(data: unknown): ToolResponse {
   return {
-    structuredContent: data,
     content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
   };
 }
@@ -53,7 +52,6 @@ export function toolResponse(data: unknown): ToolResponse {
  */
 interface ToolResponse {
   content: Array<{ type: string; text: string }>;
-  structuredContent?: unknown;
   isError?: boolean;
 }
 

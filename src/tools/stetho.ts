@@ -31,11 +31,6 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
             "Pagination offset. Use value from previous response when more=true"
           ),
       },
-      outputSchema: {
-        series: z.array(z.object({}).passthrough()),
-        more: z.boolean().optional(),
-        offset: z.number().optional(),
-      },
       annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
@@ -73,10 +68,6 @@ export function registerStethoTools(server: any, mcpAccessToken: string) {
           .describe(
             "ID of the stethoscope signal to retrieve. Obtain this from list_stetho_records response."
           ),
-      },
-      outputSchema: {
-        signal: z.array(z.number()),
-        sampling_frequency: z.number(),
       },
       annotations: TOOL_ANNOTATIONS,
     },

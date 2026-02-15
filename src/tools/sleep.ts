@@ -32,9 +32,6 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
             "Comma-separated list of data fields to return. Available fields: 'hr' (heart rate bpm), 'rr' (respiration rate breaths/min), 'snoring' (total snoring seconds), 'sdnn_1' (HRV standard deviation ms), 'rmssd' (HRV root mean square ms), 'hrv_quality' (HRV quality score), 'mvt_score' (movement intensity 0-255, Sleep Analyzer only), 'chest_movement_rate' (events/min), 'withings_index' (breathing events/hour for Sleep Rx), 'breathing_sounds' (breathing sounds tracked in seconds). If not specified, all available fields are returned."
           ),
       },
-      outputSchema: {
-        series: z.array(z.object({}).passthrough()),
-      },
       annotations: TOOL_ANNOTATIONS,
     },
     async (args: any) => {
@@ -99,10 +96,6 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
               "**Score & Events**: 'sleep_score', 'night_events' (dictionary of event types with timestamps: 1=got in bed, 2=fell asleep, 3=woke up, 4=got out of bed, 5=manual asleep period, 6=manual awake period).\n" +
               "If not specified, all available fields are returned."
           ),
-      },
-      outputSchema: {
-        series: z.array(z.object({}).passthrough()),
-        more: z.boolean().optional(),
       },
       annotations: TOOL_ANNOTATIONS,
     },
