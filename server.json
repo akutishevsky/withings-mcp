@@ -1,7 +1,17 @@
 {
-  "mcpServers": {
-    "withings": {
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.akutishevsky/withings",
+  "title": "Withings Health Data",
+  "description": "MCP server for Withings health data — sleep, activity, heart, and body metrics.",
+  "repository": {
+    "url": "https://github.com/akutishevsky/withings-mcp",
+    "source": "github"
+  },
+  "version": "1.3.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
       "url": "https://withings-mcp.com/mcp"
     }
-  }
+  ]
 }
