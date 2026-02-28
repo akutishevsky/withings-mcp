@@ -1,9 +1,11 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createLogger } from "../utils/logger.js";
+import process from "node:process";
 
 const logger = createLogger({ component: "supabase" });
 
 // Use 'any' for the database schema since we're not using Supabase CLI to generate types
+// deno-lint-ignore no-explicit-any
 type SupabaseDatabase = SupabaseClient<any, "public", any>;
 
 let supabaseClient: SupabaseDatabase | null = null;

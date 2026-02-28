@@ -1,3 +1,4 @@
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerSleepTools } from "./sleep.js";
 import { registerMeasureTools } from "./measure.js";
 import { registerUserTools } from "./user.js";
@@ -21,7 +22,7 @@ const ANALYTICS_TTL_MS = 90 * 24 * 60 * 60 * 1000;
  * @param server - The MCP server instance to register tools on
  * @param mcpAccessToken - The MCP access token for authentication
  */
-export function registerAllTools(server: any, mcpAccessToken: string) {
+export function registerAllTools(server: McpServer, mcpAccessToken: string) {
   registerSleepTools(server, mcpAccessToken);
   registerMeasureTools(server, mcpAccessToken);
   registerUserTools(server, mcpAccessToken);
@@ -51,7 +52,8 @@ export function toolResponse(data: unknown): ToolResponse {
  * MCP tool response type
  */
 interface ToolResponse {
-  content: Array<{ type: string; text: string }>;
+  [key: string]: unknown;
+  content: Array<{ type: "text"; text: string }>;
   isError?: boolean;
 }
 
@@ -122,6 +124,7 @@ export async function withAnalytics(
   toolName: string,
   handler: () => Promise<ToolResponse>,
   context: AnalyticsContext,
+  // deno-lint-ignore no-explicit-any
   args?: Record<string, any>
 ): Promise<ToolResponse> {
   const startTime = performance.now();
@@ -151,7 +154,7 @@ export async function withAnalytics(
     const durationMs = Math.round(performance.now() - startTime);
 
     // Log to stdout (privacy-safe: no user ID)
-    const stdoutAnalytics: Record<string, any> = {
+    const stdoutAnalytics: Record<string, unknown> = {
       tool: toolName,
       duration_ms: durationMs,
       success: true,
@@ -185,7 +188,7 @@ export async function withAnalytics(
     const errorCategory = categorizeError(error);
 
     // Log to stdout (privacy-safe: no user ID)
-    const stdoutAnalytics: Record<string, any> = {
+    const stdoutAnalytics: Record<string, unknown> = {
       tool: toolName,
       duration_ms: durationMs,
       success: false,

@@ -1,12 +1,14 @@
 import { z } from "zod";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getSleep, getSleepSummary } from "../withings/api.js";
 import {
   addReadableTimestamps,
   addReadableNightEvents,
 } from "../utils/timestamp.js";
 import { withAnalytics, TOOL_ANNOTATIONS, toolResponse } from "./index.js";
+import type { SleepSummary } from "../types/withings.js";
 
-export function registerSleepTools(server: any, mcpAccessToken: string) {
+export function registerSleepTools(server: McpServer, mcpAccessToken: string) {
   // Sleep v2 - Get: High-frequency sleep data with timestamps
   server.registerTool(
     "get_sleep",
@@ -34,7 +36,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
       },
       annotations: TOOL_ANNOTATIONS,
     },
-    async (args: any) => {
+    (args) => {
       return withAnalytics(
         "get_sleep",
         async () => {
@@ -99,7 +101,7 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
       },
       annotations: TOOL_ANNOTATIONS,
     },
-    async (args: any) => {
+    (args) => {
       return withAnalytics(
         "get_sleep_summary",
         async () => {
@@ -112,12 +114,12 @@ export function registerSleepTools(server: any, mcpAccessToken: string) {
           );
 
           // Add readable datetime fields for timestamps
-          let processedData = addReadableTimestamps(sleepData);
+          const processedData = addReadableTimestamps(sleepData);
 
           // Process each sleep summary for night_events timestamps
           if (processedData?.series) {
             processedData.series = processedData.series.map(
-              (sleepSummary: any) => addReadableNightEvents(sleepSummary)
+              (sleepSummary: SleepSummary) => addReadableNightEvents(sleepSummary)
             );
           }
 

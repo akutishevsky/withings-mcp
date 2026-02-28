@@ -1,9 +1,10 @@
 import { z } from "zod";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { listHeartRecords, getHeartSignal } from "../withings/api.js";
 import { addReadableTimestamps } from "../utils/timestamp.js";
 import { withAnalytics, TOOL_ANNOTATIONS, toolResponse } from "./index.js";
 
-export function registerHeartTools(server: any, mcpAccessToken: string) {
+export function registerHeartTools(server: McpServer, mcpAccessToken: string) {
   // Register list_heart_records tool
   server.registerTool(
     "list_heart_records",
@@ -33,7 +34,7 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
       },
       annotations: TOOL_ANNOTATIONS,
     },
-    async (args: any) => {
+    (args) => {
       return withAnalytics(
         "list_heart_records",
         async () => {
@@ -83,7 +84,7 @@ export function registerHeartTools(server: any, mcpAccessToken: string) {
       },
       annotations: TOOL_ANNOTATIONS,
     },
-    async (args: any) => {
+    (args) => {
       return withAnalytics(
         "get_heart_signal",
         async () => {

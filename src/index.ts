@@ -7,6 +7,7 @@ import { tokenStore } from "./auth/token-store.js";
 import { createApp } from "./server/app.js";
 import { setOAuthConfig } from "./config.js";
 import { initRateLimiter } from "./server/rate-limiter.js";
+import process from "node:process";
 
 // Initialize Supabase first (required by all stores)
 await initSupabase();
