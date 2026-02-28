@@ -5,6 +5,7 @@ import { getSupabaseClient } from "../db/supabase.js";
 import { createLogger } from "../utils/logger.js";
 import { rateLimit } from "../server/rate-limiter.js";
 import { encrypt, decrypt } from "../utils/encryption.js";
+import { Buffer } from "node:buffer";
 
 const logger = createLogger({ component: "oauth" });
 

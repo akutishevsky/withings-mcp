@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createLogger } from "../utils/logger.js";
+import process from "node:process";
 
 const logger = createLogger({ component: "supabase" });
 

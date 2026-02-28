@@ -14,6 +14,7 @@
  * - debug: Detailed diagnostic information (disabled in production)
  */
 
+import process from "node:process";
 const redactedFields = [
   // Authentication
   "token",

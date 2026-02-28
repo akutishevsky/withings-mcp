@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { createOAuthRouter } from "../auth/oauth.js";
 import { authenticateBearer } from "./middleware.js";
 import { handleMcp } from "./mcp-endpoints.js";
+import process from "node:process";
 
 export interface ServerConfig {
   oauthConfig: {

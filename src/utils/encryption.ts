@@ -1,4 +1,6 @@
 import crypto from "node:crypto";
+import { Buffer } from "node:buffer";
+import process from "node:process";
 
 /**
  * Encryption utility for sensitive data using AES-256-GCM
