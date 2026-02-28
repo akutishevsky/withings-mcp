@@ -1,5 +1,6 @@
 import { tokenStore } from "../auth/token-store.js";
 import { createLogger } from "../utils/logger.js";
+import type { AppContext, AppNext } from "../types/hono.js";
 
 const logger = createLogger({ component: "middleware" });
 
@@ -7,7 +8,7 @@ const logger = createLogger({ component: "middleware" });
  * Bearer token authentication middleware
  * Validates the MCP access token and stores it in the context
  */
-export const authenticateBearer = async (c: any, next: any) => {
+export const authenticateBearer = async (c: AppContext, next: AppNext) => {
   const authHeader = c.req.header("Authorization");
   const path = c.req.path;
   const method = c.req.method;
@@ -26,6 +27,6 @@ export const authenticateBearer = async (c: any, next: any) => {
 
   logger.info(`Authenticated request: ${method} ${path}`);
   // Store token in context for later use
-  c.set("accessToken" as any, token);
+  c.set("accessToken", token);
   await next();
 };

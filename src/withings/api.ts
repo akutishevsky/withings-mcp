@@ -3,6 +3,7 @@ import { refreshWithingsToken } from "../auth/oauth.js";
 import { getOAuthConfig } from "../config.js";
 import { createLogger } from "../utils/logger.js";
 import { dateToUnixTimestamp } from "../utils/timestamp.js";
+import type { ApiParams, ApiResponse } from "../types/withings.js";
 
 const logger = createLogger({ component: "withings-api" });
 const WITHINGS_API_BASE = "https://wbsapi.withings.net";
@@ -18,8 +19,8 @@ export async function makeWithingsRequest(
   mcpToken: string,
   endpoint: string,
   action: string,
-  additionalParams: Record<string, any> = {}
-): Promise<any> {
+  additionalParams: ApiParams = {}
+): Promise<ApiResponse> {
   // Get Withings access token from MCP token
   let tokenData = await tokenStore.getTokens(mcpToken);
   if (!tokenData) {
@@ -113,8 +114,8 @@ export async function getSleep(
   startDate: string,
   endDate: string,
   dataFields?: string
-): Promise<any> {
-  const params: Record<string, any> = {
+): Promise<ApiResponse> {
+  const params: ApiParams = {
     startdate: dateToUnixTimestamp(startDate),
     enddate: dateToUnixTimestamp(endDate),
   };
@@ -135,8 +136,8 @@ export async function getSleepSummary(
   endDateYmd?: string,
   lastUpdate?: number,
   dataFields?: string
-): Promise<any> {
-  const params: Record<string, any> = {};
+): Promise<ApiResponse> {
+  const params: ApiParams = {};
 
   if (lastUpdate) {
     params.lastupdate = lastUpdate;
@@ -165,8 +166,8 @@ export async function getMeasures(
   enddate?: string,
   lastupdate?: number,
   offset?: number
-): Promise<any> {
-  const params: Record<string, any> = {};
+): Promise<ApiResponse> {
+  const params: ApiParams = {};
 
   if (meastype !== undefined) {
     params.meastype = meastype;
@@ -205,8 +206,8 @@ export async function getWorkouts(
   lastUpdate?: number,
   offset?: number,
   dataFields?: string
-): Promise<any> {
-  const params: Record<string, any> = {};
+): Promise<ApiResponse> {
+  const params: ApiParams = {};
 
   if (lastUpdate) {
     params.lastupdate = lastUpdate;
@@ -238,8 +239,8 @@ export async function getActivity(
   lastUpdate?: number,
   offset?: number,
   dataFields?: string
-): Promise<any> {
-  const params: Record<string, any> = {};
+): Promise<ApiResponse> {
+  const params: ApiParams = {};
 
   if (lastUpdate) {
     params.lastupdate = lastUpdate;
@@ -270,8 +271,8 @@ export async function getIntradayActivity(
   startDate?: string,
   endDate?: string,
   dataFields?: string
-): Promise<any> {
-  const params: Record<string, any> = {};
+): Promise<ApiResponse> {
+  const params: ApiParams = {};
 
   if (startDate !== undefined) {
     params.startdate = dateToUnixTimestamp(startDate);
@@ -291,14 +292,14 @@ export async function getIntradayActivity(
 /**
  * Get list of user's linked devices
  */
-export async function getUserDevices(mcpToken: string): Promise<any> {
+export async function getUserDevices(mcpToken: string): Promise<ApiResponse> {
   return await makeWithingsRequest(mcpToken, "/v2/user", "getdevice", {});
 }
 
 /**
  * Get user's goals
  */
-export async function getUserGoals(mcpToken: string): Promise<any> {
+export async function getUserGoals(mcpToken: string): Promise<ApiResponse> {
   return await makeWithingsRequest(mcpToken, "/v2/user", "getgoals", {});
 }
 
@@ -310,8 +311,8 @@ export async function listHeartRecords(
   startDate?: string,
   endDate?: string,
   offset?: number
-): Promise<any> {
-  const params: Record<string, any> = {};
+): Promise<ApiResponse> {
+  const params: ApiParams = {};
 
   if (startDate !== undefined) {
     params.startdate = dateToUnixTimestamp(startDate);
@@ -336,8 +337,8 @@ export async function getHeartSignal(
   signalId: string,
   withFiltered?: boolean,
   withIntervals?: boolean
-): Promise<any> {
-  const params: Record<string, any> = {
+): Promise<ApiResponse> {
+  const params: ApiParams = {
     signalid: signalId,
   };
 
@@ -360,8 +361,8 @@ export async function listStethoRecords(
   startDate?: string,
   endDate?: string,
   offset?: number
-): Promise<any> {
-  const params: Record<string, any> = {};
+): Promise<ApiResponse> {
+  const params: ApiParams = {};
 
   if (startDate !== undefined) {
     params.startdate = dateToUnixTimestamp(startDate);
@@ -384,8 +385,8 @@ export async function listStethoRecords(
 export async function getStethoSignal(
   mcpToken: string,
   signalId: string
-): Promise<any> {
-  const params: Record<string, any> = {
+): Promise<ApiResponse> {
+  const params: ApiParams = {
     signalid: signalId,
   };
 

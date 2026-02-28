@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { registerAllTools } from "../tools/index.js";
 import { createLogger } from "../utils/logger.js";
+import type { AppContext } from "../types/hono.js";
 
 const logger = createLogger({ component: "mcp-endpoints" });
 
@@ -17,8 +18,8 @@ const sessions = new Map<string, {
  * all protocol details internally (SSE streaming, JSON-RPC validation,
  * session lifecycle, heartbeats).
  */
-export const handleMcp = async (c: any) => {
-  const mcpToken = c.get("accessToken") as string;
+export const handleMcp = async (c: AppContext) => {
+  const mcpToken = c.get("accessToken");
   const sessionId = c.req.header("mcp-session-id");
 
   // Look up existing session

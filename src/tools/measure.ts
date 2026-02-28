@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   getMeasures,
   getWorkouts,
@@ -147,7 +148,7 @@ const DEVICE_MODEL_MAP: Record<number, string> = {
   1062: "Huawei tracker",
 };
 
-export function registerMeasureTools(server: any, mcpAccessToken: string) {
+export function registerMeasureTools(server: McpServer, mcpAccessToken: string) {
   // Register get_measures tool
   server.registerTool(
     "get_measures",
@@ -195,7 +196,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
       },
       annotations: TOOL_ANNOTATIONS,
     },
-    async (args: any) => {
+    (args) => {
       return withAnalytics(
         "get_measures",
         async () => {
@@ -212,13 +213,15 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
           // Add type descriptions and calculated values to each measure
           // Remove deprecated fields (algo, fm)
           if (measures?.measuregrps) {
+            // deno-lint-ignore no-explicit-any
             measures.measuregrps = measures.measuregrps.map((grp: any) => {
               if (grp.measures) {
+                // deno-lint-ignore no-explicit-any
                 grp.measures = grp.measures.map((measure: any) => {
                   const calculatedValue =
                     measure.value * Math.pow(10, measure.unit);
                   // Destructure to remove deprecated fields
-                  const { algo, fm, ...cleanMeasure } = measure;
+                  const { algo: _algo, fm: _fm, ...cleanMeasure } = measure;
                   return {
                     ...cleanMeasure,
                     type_description:
@@ -287,7 +290,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
       },
       annotations: TOOL_ANNOTATIONS,
     },
-    async (args: any) => {
+    (args) => {
       return withAnalytics(
         "get_workouts",
         async () => {
@@ -302,6 +305,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
 
           // Replace category and model field values with descriptions
           if (workouts?.series) {
+            // deno-lint-ignore no-explicit-any
             workouts.series = workouts.series.map((workout: any) => {
               const updatedWorkout = { ...workout };
 
@@ -375,7 +379,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
       },
       annotations: TOOL_ANNOTATIONS,
     },
-    async (args: any) => {
+    (args) => {
       return withAnalytics(
         "get_activity",
         async () => {
@@ -428,7 +432,7 @@ export function registerMeasureTools(server: any, mcpAccessToken: string) {
       },
       annotations: TOOL_ANNOTATIONS,
     },
-    async (args: any) => {
+    (args) => {
       return withAnalytics(
         "get_intraday_activity",
         async () => {

@@ -101,7 +101,7 @@ export function formatTimestampWithTimezone(
 
     // Build formatted string: YYYY-MM-DD HH:MM:SS timezone
     return `${dateParts.year}-${dateParts.month}-${dateParts.day} ${dateParts.hour}:${dateParts.minute}:${dateParts.second} ${timezone}`;
-  } catch (error) {
+  } catch {
     // If timezone is invalid or conversion fails, fall back to UTC
     return formatTimestamp(timestamp);
   }
@@ -119,6 +119,7 @@ export function formatTimestampWithTimezone(
  * @param obj The object to process (can be nested)
  * @returns The processed object with timestamps replaced by readable datetime strings
  */
+// deno-lint-ignore no-explicit-any
 export function addReadableTimestamps(obj: any): any {
   if (obj === null || obj === undefined) {
     return obj;
@@ -131,6 +132,7 @@ export function addReadableTimestamps(obj: any): any {
 
   // Handle objects
   if (typeof obj === "object") {
+    // deno-lint-ignore no-explicit-any
     const processed: any = {};
 
     // First pass: collect timezone if present
@@ -174,6 +176,7 @@ export function addReadableTimestamps(obj: any): any {
  * @param sleepData The sleep summary object containing night_events
  * @returns Processed object with night_events timestamps converted to datetime strings
  */
+// deno-lint-ignore no-explicit-any
 export function addReadableNightEvents(sleepData: any): any {
   if (!sleepData || !sleepData.night_events) {
     return sleepData;
@@ -185,6 +188,7 @@ export function addReadableNightEvents(sleepData: any): any {
       ? sleepData.timezone
       : undefined;
 
+  // deno-lint-ignore no-explicit-any
   const processedNightEvents: any = {};
 
   for (const [eventType, timestamps] of Object.entries(

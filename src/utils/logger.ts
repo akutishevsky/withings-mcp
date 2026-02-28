@@ -67,14 +67,15 @@ type LogLevel = keyof typeof LOG_LEVELS;
 
 class Logger {
   private level: number;
-  private context: Record<string, any>;
+  private context: Record<string, unknown>;
 
-  constructor(context: Record<string, any> = {}) {
+  constructor(context: Record<string, unknown> = {}) {
     const envLevel = (process.env.LOG_LEVEL || "info").toLowerCase() as LogLevel;
     this.level = LOG_LEVELS[envLevel] || LOG_LEVELS.info;
     this.context = context;
   }
 
+  // deno-lint-ignore no-explicit-any
   private redact(obj: any): any {
     if (typeof obj !== "object" || obj === null) {
       return obj;
@@ -84,6 +85,7 @@ class Logger {
       return obj.map((item) => this.redact(item));
     }
 
+    // deno-lint-ignore no-explicit-any
     const redacted: any = {};
     for (const [key, value] of Object.entries(obj)) {
       if (redactedFields.includes(key)) {
@@ -97,7 +99,7 @@ class Logger {
     return redacted;
   }
 
-  private log(level: LogLevel, message: string, data?: any) {
+  private log(level: LogLevel, message: string, data?: unknown) {
     if (LOG_LEVELS[level] < this.level) {
       return;
     }
@@ -125,27 +127,27 @@ class Logger {
     }
   }
 
-  trace(message: string, data?: any) {
+  trace(message: string, data?: unknown) {
     this.log("trace", message, data);
   }
 
-  debug(message: string, data?: any) {
+  debug(message: string, data?: unknown) {
     this.log("debug", message, data);
   }
 
-  info(message: string, data?: any) {
+  info(message: string, data?: unknown) {
     this.log("info", message, data);
   }
 
-  warn(message: string, data?: any) {
+  warn(message: string, data?: unknown) {
     this.log("warn", message, data);
   }
 
-  error(message: string, data?: any) {
+  error(message: string, data?: unknown) {
     this.log("error", message, data);
   }
 
-  child(context: Record<string, any>) {
+  child(context: Record<string, unknown>) {
     return new Logger({ ...this.context, ...context });
   }
 }
@@ -156,7 +158,7 @@ export const logger = new Logger();
  * Create a child logger with additional context
  * @param context - Context object (e.g., { component: "oauth" })
  */
-export function createLogger(context: Record<string, any>) {
+export function createLogger(context: Record<string, unknown>) {
   return logger.child(context);
 }
 

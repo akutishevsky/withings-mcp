@@ -1,8 +1,9 @@
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getUserDevices, getUserGoals } from "../withings/api.js";
 import { addReadableTimestamps } from "../utils/timestamp.js";
 import { withAnalytics, TOOL_ANNOTATIONS, toolResponse } from "./index.js";
 
-export function registerUserTools(server: any, mcpAccessToken: string) {
+export function registerUserTools(server: McpServer, mcpAccessToken: string) {
   // Register get_user_devices tool
   server.registerTool(
     "get_user_devices",
@@ -13,7 +14,7 @@ export function registerUserTools(server: any, mcpAccessToken: string) {
       inputSchema: {},
       annotations: TOOL_ANNOTATIONS,
     },
-    async () => {
+    () => {
       return withAnalytics(
         "get_user_devices",
         async () => {
@@ -39,7 +40,7 @@ export function registerUserTools(server: any, mcpAccessToken: string) {
       inputSchema: {},
       annotations: TOOL_ANNOTATIONS,
     },
-    async () => {
+    () => {
       return withAnalytics(
         "get_user_goals",
         async () => {
