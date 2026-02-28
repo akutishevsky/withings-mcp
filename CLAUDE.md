@@ -517,7 +517,7 @@ Tools are registered using a centralized approach:
 **Authentication:**
 - Auth URL: `https://account.withings.com/oauth2_user/authorize2`
 - Token URL: `https://wbsapi.withings.net/v2/oauth2`
-- Scopes: `user.metrics,user.activity`
+- Scopes: `user.metrics,user.activity,user.sleepevents,user.info`
 - Token response format uses `action: "requesttoken"` and returns `status: 0` on success
 
 **API Endpoints** (src/withings/api.ts):
