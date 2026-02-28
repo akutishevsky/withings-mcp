@@ -42,7 +42,6 @@ src/
 │   └── token-store.ts       # MCP ↔ Withings token mapping
 ├── db/                       # Database Layer (Supabase)
 │   ├── supabase.ts          # Supabase client initialization
-│   ├── types.ts             # TypeScript types for database rows
 │   └── cleanup.ts           # Expired record cleanup scheduler
 ├── server/                   # Server components
 │   ├── app.ts               # Hono app setup, route mounting, MCP_ENDPOINT constant
@@ -58,6 +57,9 @@ src/
 │   └── stetho.ts            # Stetho API: list_stetho_records, get_stetho_signal
 ├── withings/                # Withings API Integration
 │   └── api.ts               # Withings API client & request handling
+├── types/                    # TypeScript type definitions
+│   ├── hono.ts              # Hono app environment types (AppEnv, AppContext)
+│   └── withings.ts          # Withings API response interfaces & param types
 ├── utils/                    # Utilities
 │   ├── logger.ts            # Privacy-safe custom logger for Deno Deploy
 │   ├── encryption.ts        # AES-256-GCM encryption for sensitive tokens
@@ -464,7 +466,8 @@ To add new Withings API tools:
 2. Export a `register[Category]Tools()` function that takes `(server, mcpAccessToken)`
 3. Import and call your registration function in `src/tools/index.ts`
 4. Add corresponding API client functions to `src/withings/api.ts`
-5. Add a component logger entry (e.g., `component: "tools:newcategory"`)
+5. Add response type interfaces to `src/types/withings.ts`
+6. Add a component logger entry (e.g., `component: "tools:newcategory"`)
 
 Implemented tool categories:
 - Sleep API (high-frequency sleep data, sleep summary data)
@@ -535,7 +538,7 @@ Tools are registered using a centralized approach:
 - Stetho Signal: `/v2/stetho` with action `get`
 
 **API Client** (src/withings/api.ts):
-- `makeWithingsRequest()`: Generic authenticated request handler
+- `makeWithingsRequest<T>()`: Generic authenticated request handler with typed responses (interfaces in src/types/withings.ts)
 - Automatically maps MCP tokens to Withings tokens via token store
 - **Automatic Token Refresh**: Checks if Withings access token is expired or expiring within 5 minutes, and automatically refreshes it using the refresh token before making API calls
 - Error handling for Withings API status codes (status !== 0)
