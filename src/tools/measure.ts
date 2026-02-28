@@ -8,6 +8,7 @@ import {
 } from "../withings/api.js";
 import { addReadableTimestamps } from "../utils/timestamp.js";
 import { withAnalytics, TOOL_ANNOTATIONS, toolResponse } from "./index.js";
+import type { MeasureGroup, Measure, Workout } from "../types/withings.js";
 
 // Map of measure type IDs to descriptions
 const MEASURE_TYPE_MAP: Record<number, string> = {
@@ -213,11 +214,9 @@ export function registerMeasureTools(server: McpServer, mcpAccessToken: string) 
           // Add type descriptions and calculated values to each measure
           // Remove deprecated fields (algo, fm)
           if (measures?.measuregrps) {
-            // deno-lint-ignore no-explicit-any
-            measures.measuregrps = measures.measuregrps.map((grp: any) => {
+            measures.measuregrps = measures.measuregrps.map((grp: MeasureGroup) => {
               if (grp.measures) {
-                // deno-lint-ignore no-explicit-any
-                grp.measures = grp.measures.map((measure: any) => {
+                grp.measures = grp.measures.map((measure: Measure) => {
                   const calculatedValue =
                     measure.value * Math.pow(10, measure.unit);
                   // Destructure to remove deprecated fields
@@ -305,8 +304,7 @@ export function registerMeasureTools(server: McpServer, mcpAccessToken: string) 
 
           // Replace category and model field values with descriptions
           if (workouts?.series) {
-            // deno-lint-ignore no-explicit-any
-            workouts.series = workouts.series.map((workout: any) => {
+            workouts.series = workouts.series.map((workout: Workout) => {
               const updatedWorkout = { ...workout };
 
               // Replace category ID with description

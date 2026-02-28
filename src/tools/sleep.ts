@@ -6,6 +6,7 @@ import {
   addReadableNightEvents,
 } from "../utils/timestamp.js";
 import { withAnalytics, TOOL_ANNOTATIONS, toolResponse } from "./index.js";
+import type { SleepSummary } from "../types/withings.js";
 
 export function registerSleepTools(server: McpServer, mcpAccessToken: string) {
   // Sleep v2 - Get: High-frequency sleep data with timestamps
@@ -118,8 +119,7 @@ export function registerSleepTools(server: McpServer, mcpAccessToken: string) {
           // Process each sleep summary for night_events timestamps
           if (processedData?.series) {
             processedData.series = processedData.series.map(
-              // deno-lint-ignore no-explicit-any
-              (sleepSummary: any) => addReadableNightEvents(sleepSummary)
+              (sleepSummary: SleepSummary) => addReadableNightEvents(sleepSummary)
             );
           }
 
