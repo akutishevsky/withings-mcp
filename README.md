@@ -297,6 +297,7 @@ src/
 ├── db/                # Supabase client & cleanup scheduler
 ├── server/            # Hono app, MCP endpoints, middleware
 ├── tools/             # MCP tools for Withings API (sleep, measure, user, heart, stetho)
+├── types/             # TypeScript type definitions (Hono, Withings API)
 ├── withings/          # Withings API client
 ├── utils/             # Logger and encryption utilities
 └── index.ts           # Main entry point
