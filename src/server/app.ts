@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { createOAuthRouter } from "../auth/oauth.js";
 import { authenticateBearer } from "./middleware.js";
 import { handleMcp } from "./mcp-endpoints.js";
+import type { AppEnv } from "../types/hono.js";
 import process from "node:process";
 
 export interface ServerConfig {
@@ -21,7 +22,7 @@ const MCP_ENDPOINT = "/mcp";
  * Create and configure the Hono application
  */
 export function createApp(config: ServerConfig) {
-  const app = new Hono();
+  const app = new Hono<AppEnv>();
 
   // HTTPS redirect in production (behind reverse proxy)
   app.use("*", async (c, next) => {
