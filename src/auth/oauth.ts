@@ -321,7 +321,7 @@ export function createOAuthRouter(config: OAuthConfig) {
     withingsAuthUrl.searchParams.append("response_type", "code");
     withingsAuthUrl.searchParams.append("client_id", config.clientId);
     withingsAuthUrl.searchParams.append("redirect_uri", config.redirectUri);
-    withingsAuthUrl.searchParams.append("scope", "user.metrics,user.activity,user.sleepevents");
+    withingsAuthUrl.searchParams.append("scope", "user.metrics,user.activity,user.sleepevents,user.info");
     withingsAuthUrl.searchParams.append("state", internalState);
 
     return c.redirect(withingsAuthUrl.toString());
