@@ -78,13 +78,14 @@ If you just want to use this MCP server with Claude Desktop without hosting anyt
 #### Step 1: Add Connector in Claude Desktop
 
 1. Open Claude Desktop
-2. Go to **Settings** (gear icon in the bottom-left corner)
-3. Navigate to the **Connectors** tab
-4. Click **Add Custom Connector**
-5. Fill in the following details:
+2. Go to **Customize** (in the sidebar or menu)
+3. Navigate to the **Connectors** section
+4. Click the **+** button to add a new connector
+5. Select **Add Custom Connector**
+6. Fill in the following details:
    - **Name**: `Withings` (or any name you prefer)
    - **Remote MCP server URL**: `https://withings-mcp.com/mcp`
-6. Click **Add**
+7. Click **Add**
 
 > **Note**: If your MCP client doesn't support UI-based connector configuration, you can manually edit the config file instead. See the [manual configuration guide](#manual-configuration) below.
 
@@ -250,8 +251,8 @@ Go back to your Withings developer app and update the redirect URI to match your
 #### For Claude Desktop:
 
 1. Open Claude Desktop
-2. Go to **Settings** → **Connectors** tab
-3. Click **Add Custom Connector**
+2. Go to **Customize** → **Connectors** section
+3. Click the **+** button, then select **Add Custom Connector**
 4. Fill in the following details:
    - **Name**: `Withings` (or any name you prefer)
    - **Remote MCP server URL**: `https://your-domain.com/mcp`
