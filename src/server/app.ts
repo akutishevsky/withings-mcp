@@ -53,8 +53,10 @@ export function createApp(config: ServerConfig) {
     // X-Frame-Options: Prevent clickjacking
     c.header("X-Frame-Options", "DENY");
 
-    // Content-Security-Policy: Restrict resource loading
-    c.header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'");
+    // Content-Security-Policy: Restrict resource loading (skip if route already set one)
+    if (!c.res.headers.get("Content-Security-Policy")) {
+      c.header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'");
+    }
 
     // Referrer-Policy: Control referrer information
     c.header("Referrer-Policy", "no-referrer");
