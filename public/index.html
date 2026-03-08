@@ -7,34 +7,81 @@
     <link rel="stylesheet" href="/styles/index.css" />
   </head>
   <body>
-    <h1>Withings MCP Server</h1>
-    <p class="subtitle">
-      Model Context Protocol server for Withings health data integration
-    </p>
+    <div class="container">
+      <header class="hero">
+        <div class="status-badge" id="status-badge">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Checking...</span>
+        </div>
+        <h1>Withings MCP Server</h1>
+        <p class="subtitle">
+          Access your Withings health data through Claude using the
+          Model Context Protocol
+        </p>
+      </header>
 
-    <div class="info">
-      <p>
-        This is a <strong>Model Context Protocol (MCP)</strong> server that
-        provides access to Withings health and fitness data through Claude and
-        other MCP-compatible clients.
-      </p>
+      <section class="card quick-setup">
+        <h2>Quick Setup</h2>
+        <ol>
+          <li>
+            Open <strong>Claude Desktop</strong> &rarr;
+            <strong>Customize</strong> &rarr; <strong>Connectors</strong>
+          </li>
+          <li>Click <strong>+</strong> &rarr; <strong>Add Custom Connector</strong></li>
+          <li>
+            Set URL to
+            <code>https://withings-mcp.com/mcp</code>
+            &rarr; click <strong>Add</strong>
+          </li>
+          <li>Click <strong>Connect</strong> and authorize with your Withings account</li>
+        </ol>
+      </section>
+
+      <section class="card features">
+        <h2>What you can do</h2>
+        <div class="feature-grid">
+          <div class="feature">
+            <div class="feature-icon">sleep</div>
+            <div>
+              <strong>Sleep</strong>
+              <p>Sleep stages, duration, heart rate, breathing quality</p>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">body</div>
+            <div>
+              <strong>Body</strong>
+              <p>Weight, body composition, blood pressure, temperature</p>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">activity</div>
+            <div>
+              <strong>Activity</strong>
+              <p>Steps, workouts, calories, intraday tracking</p>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">heart</div>
+            <div>
+              <strong>Heart</strong>
+              <p>ECG recordings, waveform data, afib detection</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div class="footer-links">
+          <a href="https://github.com/akutishevsky/withings-mcp" target="_blank">GitHub</a>
+          <span class="separator"></span>
+          <a href="/.well-known/oauth-authorization-server">OAuth Metadata</a>
+          <span class="separator"></span>
+          <a href="/health">Health Check</a>
+        </div>
+      </footer>
     </div>
 
-    <p>For setup instructions, documentation, and source code, visit:</p>
-    <p>
-      <a href="https://github.com/akutishevsky/withings-mcp" target="_blank"
-        >https://github.com/akutishevsky/withings-mcp</a
-      >
-    </p>
-
-    <div class="footer">
-      <p>Endpoints:</p>
-      <ul>
-        <li>
-          <a href="/.well-known/oauth-authorization-server">OAuth metadata</a>
-        </li>
-        <li><a href="/health">Health check</a></li>
-      </ul>
-    </div>
+    <script src="/scripts/index.js"></script>
   </body>
 </html>

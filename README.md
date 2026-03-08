@@ -15,12 +15,22 @@ A Model Context Protocol (MCP) server that brings your Withings health data into
 
 **⚠️ Disclaimer**: This server is provided **as-is** without any guarantees or warranties. While I've made every effort to ensure security and privacy, I make no guarantees about availability, data integrity, or security. Use at your own risk. For production use cases, consider self-hosting your own instance.
 
+## Quick Setup
+
+1. Open **Claude Desktop** → **Customize** → **Connectors**
+2. Click **+** → **Add Custom Connector**
+3. Set URL to `https://withings-mcp.com/mcp` → click **Add**
+4. Click **Connect** and authorize with your Withings account
+
+That's it! Ask Claude about your sleep, weight, workouts, or heart data.
+
 ## Demo
 
 ![Demo](demo/demo.gif)
 
 ## Table of Contents
 
+- [Quick Setup](#quick-setup)
 - [Demo](#demo)
 - [What Can You Do With This?](#what-can-you-do-with-this)
 - [For End Users: Using the Hosted Server](#for-end-users-using-the-hosted-server)
