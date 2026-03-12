@@ -176,6 +176,10 @@ Want to run your own instance? Here's how to deploy this MCP server yourself.
    - This must be a publicly accessible URL (localhost is not supported by Withings)
    - Can be any domain where you'll host the server (e.g., Deno Deploy, your own server, etc.)
 
+### Important: Remove Google Analytics
+
+The hosted version includes a Google Analytics tag (`G-ZMGF9WXL3W`) in the static pages under `public/`. If you're forking this repo, **remove or replace the GA snippet** in `public/index.html` and `public/health.html`, and update the CSP headers in `src/server/app.ts` accordingly.
+
 ### Step 2: Clone and Setup
 
 ```bash
