@@ -142,7 +142,7 @@ export function createApp(config: ServerConfig) {
   app.get("/", async (c) => {
     try {
       const html = await readFile("./public/index.html", "utf-8");
-      c.header("Content-Security-Policy", "default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'");
+      c.header("Content-Security-Policy", "default-src 'none'; style-src 'self'; script-src 'self' https://www.googletagmanager.com; connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; img-src https://www.google-analytics.com https://*.google-analytics.com https://*.googletagmanager.com; frame-ancestors 'none'");
       return c.html(html);
     } catch {
       return c.notFound();
@@ -193,7 +193,7 @@ export function createApp(config: ServerConfig) {
   app.get("/health", async (c) => {
     try {
       const html = await readFile("./public/health.html", "utf-8");
-      c.header("Content-Security-Policy", "default-src 'none'; style-src 'self'; frame-ancestors 'none'");
+      c.header("Content-Security-Policy", "default-src 'none'; style-src 'self'; script-src https://www.googletagmanager.com; connect-src https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; img-src https://www.google-analytics.com https://*.google-analytics.com https://*.googletagmanager.com; frame-ancestors 'none'");
       return c.html(html);
     } catch {
       return c.notFound();
