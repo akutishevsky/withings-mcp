@@ -3,7 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Withings MCP Server</title>
+    <title>Withings MCP Server - Access Health Data Through Claude AI</title>
+    <meta name="description" content="Connect your Withings health devices to Claude AI using the Model Context Protocol. Track sleep, weight, heart rate, workouts, and body composition through natural conversation." />
+    <meta name="keywords" content="Withings, MCP, Model Context Protocol, Claude AI, health data, sleep tracking, heart rate, body composition, ECG, smart scale, fitness tracker" />
+    <link rel="canonical" href="https://withings-mcp.com/" />
+    <meta property="og:title" content="Withings MCP Server - Access Health Data Through Claude AI" />
+    <meta property="og:description" content="Connect your Withings health devices to Claude AI. Track sleep, weight, heart rate, workouts, and body composition through natural conversation." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://withings-mcp.com/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Withings MCP Server - Health Data for Claude AI" />
+    <meta name="twitter:description" content="Connect Withings health devices to Claude AI using the Model Context Protocol. Sleep, weight, heart rate, and more." />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Withings MCP Server",
+      "description": "A Model Context Protocol server that connects Withings health devices to Claude AI for natural language health data analysis.",
+      "url": "https://withings-mcp.com",
+      "applicationCategory": "HealthApplication",
+      "operatingSystem": "Web",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "author": { "@type": "Person", "name": "akutishevsky", "url": "https://github.com/akutishevsky" }
+    }
+    </script>
     <link rel="stylesheet" href="/styles/index.css" />
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZMGF9WXL3W"></script>
@@ -30,19 +53,47 @@
 
       <section class="card quick-setup">
         <h2>Quick Setup</h2>
-        <ol>
-          <li>
-            Open <strong>Claude Desktop</strong> &rarr;
-            <strong>Customize</strong> &rarr; <strong>Connectors</strong>
-          </li>
-          <li>Click <strong>+</strong> &rarr; <strong>Add Custom Connector</strong></li>
-          <li>
-            Set URL to
-            <code>https://withings-mcp.com/mcp</code>
-            &rarr; click <strong>Add</strong>
-          </li>
-          <li>Click <strong>Connect</strong> and authorize with your Withings account</li>
-        </ol>
+        <div class="tabs-wrap">
+          <input type="radio" name="tab" id="tab-claude" class="tab-input" checked />
+          <input type="radio" name="tab" id="tab-other" class="tab-input" />
+
+          <div class="tabs">
+            <label for="tab-claude" class="tab-label tab-claude-label">Claude</label>
+            <label for="tab-other" class="tab-label tab-other-label">Other Clients</label>
+          </div>
+
+          <div class="tab-panel panel-claude">
+            <p class="tab-hint">Works with Claude.ai and the Claude desktop app. Once connected on desktop, it also appears on your iOS and Android app.</p>
+            <ol>
+              <li>
+                Click <strong>Customize</strong>, then
+                <strong>Connectors</strong>
+              </li>
+              <li>Click the <strong>+</strong> button, then <strong>Add Custom Connector</strong></li>
+              <li>
+                Set the name and Remote MCP Server URL to
+                <code>https://withings-mcp.com/mcp</code>
+              </li>
+              <li>Click <strong>Connect</strong> and authorize with your Withings account</li>
+            </ol>
+          </div>
+
+          <div class="tab-panel panel-other">
+            <p class="tab-hint">Add to your MCP client configuration:</p>
+            <pre class="code-block">{
+  "mcpServers": {
+    "withings": {
+      "url": "https://withings-mcp.com/mcp"
+    }
+  }
+}</pre>
+            <ol>
+              <li>Add the JSON config above to your client's MCP settings</li>
+              <li>The server uses <strong>OAuth 2.0</strong> — your client must support the authorization code flow with PKCE</li>
+              <li>On first connect, authorize with your Withings account</li>
+            </ol>
+          </div>
+        </div>
       </section>
 
       <section class="card features">
@@ -77,6 +128,31 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <section class="card seo-section">
+        <details>
+          <summary>Learn more about Withings MCP Server</summary>
+          <div class="seo-content">
+            <h2>What is the Withings MCP Server?</h2>
+            <p>The Withings MCP Server is a free, open-source integration that connects your Withings health devices to Claude AI using the <strong>Model Context Protocol (MCP)</strong>. Instead of manually checking the Withings app for your health data, you can ask Claude questions in plain English and get instant, AI-powered analysis of your health metrics.</p>
+
+            <h2>Supported Withings Devices</h2>
+            <p>This server works with all Withings connected health devices, including <strong>Body Smart</strong> and <strong>Body Comp</strong> smart scales, <strong>ScanWatch</strong> and <strong>ScanWatch Light</strong> hybrid smartwatches, <strong>Sleep Analyzer</strong> sleep tracking mat, <strong>BPM Connect</strong> and <strong>BPM Core</strong> blood pressure monitors, and <strong>Thermo</strong> smart thermometer. Any device that syncs data to your Withings account is automatically accessible through Claude.</p>
+
+            <h2>Health Data You Can Access</h2>
+            <p><strong>Sleep tracking:</strong> Analyze your sleep stages (light, deep, REM), sleep duration, heart rate during sleep, breathing disturbances, snoring detection, and overall sleep score. Ask Claude to identify patterns in your sleep quality over weeks or months.</p>
+            <p><strong>Body measurements:</strong> Track weight trends, body fat percentage, muscle mass, bone mass, body water percentage, visceral fat, and BMI. Claude can chart your progress toward weight goals and spot trends you might miss.</p>
+            <p><strong>Heart health:</strong> Access ECG recordings, resting heart rate data, blood pressure readings, pulse wave velocity, and atrial fibrillation detection results. Review your cardiovascular health history through conversation.</p>
+            <p><strong>Activity and workouts:</strong> Review daily step counts, distance walked, calories burned, active minutes, elevation climbed, and detailed workout summaries with heart rate zones.</p>
+
+            <h2>How Does MCP Work?</h2>
+            <p>The <strong>Model Context Protocol</strong> is an open standard developed by Anthropic that allows AI assistants like Claude to securely connect to external data sources. When you connect this server, Claude gains read-only access to your Withings data through a secure OAuth 2.0 flow. Your credentials are never shared with Claude directly - the server handles authentication and only passes health data when you ask for it.</p>
+
+            <h2>Privacy and Security</h2>
+            <p>This server is designed with privacy as a priority. All tokens are encrypted at rest using AES-256-GCM. No personal health data is logged or stored on the server beyond what's needed for the active session. The entire codebase is open source so you can verify exactly how your data is handled. You can revoke access at any time from your Withings account settings.</p>
+          </div>
+        </details>
       </section>
 
       <footer class="footer">

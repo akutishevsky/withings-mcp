@@ -33,3 +33,41 @@ a {
 a:hover {
   text-decoration: underline;
 }
+.seo-section {
+  background: #f3f4f6;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+.seo-section summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #64748b;
+  list-style: none;
+}
+.seo-section summary::-webkit-details-marker {
+  display: none;
+}
+.seo-section summary::after {
+  content: " +";
+}
+.seo-section details[open] summary::after,
+.seo-section[open] summary::after {
+  content: " \2212";
+}
+.seo-content {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: #475569;
+  line-height: 1.7;
+}
+.seo-content p {
+  margin-bottom: 0.5rem;
+}
+.seo-content code {
+  background: #e5e7eb;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.825rem;
+}

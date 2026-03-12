@@ -129,6 +129,72 @@ body {
   font-weight: 500;
 }
 
+/* Tabs */
+.tabs-wrap .tab-input {
+  display: none;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 0;
+}
+
+.tab-label {
+  flex: 1;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #94a3b8;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.tab-label:hover {
+  color: #475569;
+}
+
+#tab-claude:checked ~ .tabs .tab-claude-label {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
+#tab-other:checked ~ .tabs .tab-other-label {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
+.tab-panel {
+  display: none;
+  padding-top: 1rem;
+}
+
+#tab-claude:checked ~ .tab-panel.panel-claude,
+#tab-other:checked ~ .tab-panel.panel-other {
+  display: block;
+}
+
+.tab-hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 0.75rem;
+}
+
+.code-block {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: #334155;
+  margin-bottom: 0.75rem;
+  overflow-x: auto;
+}
+
 /* Features */
 .feature-grid {
   display: grid;
@@ -203,6 +269,49 @@ body {
   height: 3px;
   border-radius: 50%;
   background: #cbd5e1;
+}
+
+/* SEO collapsible */
+.seo-section details summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+  list-style: none;
+  text-align: center;
+}
+
+.seo-section details summary::-webkit-details-marker {
+  display: none;
+}
+
+.seo-section details summary::after {
+  content: " +";
+}
+
+.seo-section details[open] summary::after {
+  content: " \2212";
+}
+
+.seo-content {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.7;
+}
+
+.seo-content h2 {
+  font-size: 0.9rem;
+  color: #334155;
+  margin: 1rem 0 0.4rem;
+}
+
+.seo-content h2:first-child {
+  margin-top: 0;
+}
+
+.seo-content p {
+  margin-bottom: 0.5rem;
 }
 
 /* Responsive */

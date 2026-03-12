@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Health Check - Withings MCP Server</title>
+    <title>Server Status - Withings MCP Server Health Check</title>
+    <meta name="description" content="Live status page for the Withings MCP Server. Check if the server is operational and available for connecting Withings health devices to Claude AI." />
+    <link rel="canonical" href="https://withings-mcp.com/health" />
+    <meta property="og:title" content="Server Status - Withings MCP Server" />
+    <meta property="og:description" content="Live status page for the Withings MCP Server. Check server availability and operational status." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://withings-mcp.com/health" />
     <link rel="stylesheet" href="/styles/health.css" />
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZMGF9WXL3W"></script>
@@ -23,6 +29,15 @@
         The <strong>Withings MCP Server</strong> is running and operational.
       </p>
     </div>
+
+    <details class="seo-section">
+      <summary>About this health check</summary>
+      <div class="seo-content">
+        <p>This page confirms that the <strong>Withings MCP Server</strong> is running and ready to accept connections from MCP clients like Claude Desktop. The server provides a secure bridge between your Withings health devices and Claude AI using the Model Context Protocol.</p>
+        <p>If the status shows <strong>OK</strong>, you can connect by adding <code>https://withings-mcp.com/mcp</code> as a custom connector in Claude Desktop. The server handles OAuth 2.0 authentication with Withings and encrypts all tokens at rest.</p>
+        <p>For setup instructions, visit the <a href="/">home page</a> or the <a href="https://github.com/akutishevsky/withings-mcp" target="_blank">GitHub repository</a>.</p>
+      </div>
+    </details>
 
     <p>
       <a href="/">Return to home page</a>
