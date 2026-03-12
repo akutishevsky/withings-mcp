@@ -271,6 +271,13 @@ body {
   background: #cbd5e1;
 }
 
+/* Demo */
+.demo-img {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
 /* SEO collapsible */
 .seo-section details summary {
   cursor: pointer;
