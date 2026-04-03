@@ -21,9 +21,10 @@ body {
   padding: 3rem 1.5rem 2rem;
 }
 
-.btn-container {
+.container .btn-container {
   display: block !important;
   margin: 0 auto;
+  width: fit-content;
 }
 
 /* Hero */
