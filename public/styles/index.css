@@ -23,7 +23,7 @@ body {
 
 .container .btn-container {
   display: block !important;
-  margin: 0 auto;
+  margin: 0 auto 1.5rem;
   width: fit-content;
 }
 
