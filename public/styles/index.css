@@ -15,6 +15,21 @@ body {
   min-height: 100vh;
 }
 
+.kofi-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.kofi-wrapper .btn-container {
+  display: inline-block !important;
+}
+
+.kofi-wrapper .btn-container img {
+  max-height: 36px !important;
+  width: auto !important;
+}
+
 .container {
   max-width: 640px;
   margin: 0 auto;
