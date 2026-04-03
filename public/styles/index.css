@@ -22,7 +22,8 @@ body {
 }
 
 .btn-container {
-  text-align: center;
+  display: block !important;
+  margin: 0 auto;
 }
 
 /* Hero */
