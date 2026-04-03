@@ -1,5 +1,7 @@
 # Withings MCP Server
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/J3J11D0MM5)
+
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=akutishevsky_withings-mcp&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=akutishevsky_withings-mcp)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=akutishevsky_withings-mcp&metric=bugs)](https://sonarcloud.io/summary/new_code?id=akutishevsky_withings-mcp)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=akutishevsky_withings-mcp&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=akutishevsky_withings-mcp)
