@@ -21,6 +21,10 @@ body {
   padding: 3rem 1.5rem 2rem;
 }
 
+.btn-container {
+  text-align: center;
+}
+
 /* Hero */
 .hero {
   text-align: center;
