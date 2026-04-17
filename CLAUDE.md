@@ -41,8 +41,7 @@ src/
 │   ├── oauth.ts             # OAuth 2.0 endpoints (/authorize, /callback, /token, /register)
 │   └── token-store.ts       # MCP ↔ Withings token mapping
 ├── db/                       # Database Layer (Supabase)
-│   ├── supabase.ts          # Supabase client initialization
-│   └── cleanup.ts           # Expired record cleanup scheduler
+│   └── supabase.ts          # Supabase client initialization
 ├── server/                   # Server components
 │   ├── app.ts               # Hono app setup, route mounting, MCP_ENDPOINT constant
 │   ├── mcp-endpoints.ts     # Unified MCP handler for /mcp endpoint (GET/POST/DELETE)
@@ -73,8 +72,9 @@ public/
 
 supabase/
 └── migrations/
-    ├── 001_initial_schema.sql  # Database schema (tables, indexes)
-    └── 004_atomic_rate_limit.sql # Atomic rate limit PostgreSQL function
+    ├── 001_initial_schema.sql   # Database schema (tables, indexes)
+    ├── 004_atomic_rate_limit.sql # Atomic rate limit PostgreSQL function
+    └── 005_pg_cron_cleanup.sql  # pg_cron jobs for expired record cleanup
 ```
 
 ### Logging
@@ -116,7 +116,6 @@ Each module creates a child logger with context:
 - `component: "tools:heart"` - Heart tool invocations
 - `component: "tools:stetho"` - Stetho tool invocations
 - `component: "supabase"` - Database client initialization
-- `component: "cleanup"` - Expired record cleanup operations
 
 ### Date and Timestamp Handling
 
@@ -248,10 +247,11 @@ Uses **Supabase PostgreSQL** (@supabase/supabase-js) for persistent storage:
 
 **TTL Implementation**:
 - All queries filter by `expires_at > now()` to exclude expired records
-- Cleanup scheduler runs on startup and periodically:
+- Expired records are purged by `pg_cron` jobs scheduled in Supabase (supabase/migrations/005_pg_cron_cleanup.sql):
   - Every 5 minutes: oauth_sessions, auth_codes, rate_limits
-  - Every 1 hour: mcp_tokens
-- Cleanup logic in src/db/cleanup.ts
+  - Hourly: mcp_tokens
+  - Daily: tool_analytics
+- Running cleanup in the database (rather than via in-process `setInterval` on Deno Deploy) lets idle isolates be recycled, reducing Memory Time usage.
 
 ## Environment Variables
 
