@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import { initSupabase } from "./db/supabase.js";
-import { cleanupExpiredRecords, scheduleCleanup } from "./db/cleanup.js";
 import { initOAuthStore } from "./auth/oauth.js";
 import { tokenStore } from "./auth/token-store.js";
 import { createApp } from "./server/app.js";
@@ -9,12 +8,10 @@ import { setOAuthConfig } from "./config.js";
 import { initRateLimiter } from "./server/rate-limiter.js";
 import process from "node:process";
 
-// Initialize Supabase first (required by all stores)
+// Initialize Supabase first (required by all stores).
+// Expired-record cleanup is handled by pg_cron in the database
+// (see supabase/migrations/005_pg_cron_cleanup.sql).
 await initSupabase();
-
-// Cleanup expired records immediately, then schedule periodic cleanup
-await cleanupExpiredRecords();
-scheduleCleanup();
 
 // Initialize stores (now use Supabase internally)
 await tokenStore.init();
