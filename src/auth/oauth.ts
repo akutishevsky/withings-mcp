@@ -400,7 +400,7 @@ export function createOAuthRouter(config: OAuthConfig) {
     return c.redirect(redirectUrl.toString());
   });
 
-  // Token endpoint - MCP client exchanges code for token
+  // Token endpoint - MCP client exchanges code for token, or refreshes it
   oauth.post(
     "/token",
     rateLimit({ maxRequests: 100, windowMs: 3600000 }), // 100 requests per hour
@@ -410,6 +410,32 @@ export function createOAuthRouter(config: OAuthConfig) {
     const code = body.code as string;
     const codeVerifier = body.code_verifier as string;
     const redirectUri = body.redirect_uri as string;
+
+    // refresh_token grant (RFC 6749 §6). Rotate the MCP token value and
+    // return the new pair. The Withings credentials stored alongside the
+    // token are preserved — this only refreshes the opaque MCP-layer token.
+    if (grantType === "refresh_token") {
+      const refreshToken = body.refresh_token as string;
+      if (!refreshToken) {
+        return c.json({ error: "invalid_request" }, 400);
+      }
+      const existing = await tokenStore.getTokens(refreshToken);
+      if (!existing) {
+        return c.json({ error: "invalid_grant" }, 400);
+      }
+      const newToken = crypto.randomUUID();
+      await tokenStore.rotateToken(refreshToken, newToken);
+
+      const MCP_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
+      c.header("Cache-Control", "no-store");
+      c.header("Pragma", "no-cache");
+      return c.json({
+        access_token: newToken,
+        token_type: "Bearer",
+        expires_in: MCP_TOKEN_TTL_SECONDS,
+        refresh_token: newToken,
+      });
+    }
 
     if (grantType !== "authorization_code") {
       logger.warn("Token exchange failed: unsupported grant type");
@@ -494,10 +520,17 @@ export function createOAuthRouter(config: OAuthConfig) {
       // Server handles refreshing Withings tokens transparently
       const MCP_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
+      // RFC 6749 §5.1: token endpoint responses MUST NOT be cached.
+      // refresh_token intentionally shares the mcpToken value — this project
+      // uses a single opaque MCP token that can be rotated via the
+      // refresh_token grant (see rotateToken in token-store.ts).
+      c.header("Cache-Control", "no-store");
+      c.header("Pragma", "no-cache");
       return c.json({
         access_token: mcpToken,
         token_type: "Bearer",
         expires_in: MCP_TOKEN_TTL_SECONDS,
+        refresh_token: mcpToken,
       });
     } catch (error) {
       logger.error("Token exchange error", { error: String(error) });
