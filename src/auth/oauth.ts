@@ -256,7 +256,6 @@ export function createOAuthRouter(config: OAuthConfig) {
 
         const clientId = crypto.randomUUID();
         const clientSecret = crypto.randomUUID();
-        const issuedAt = Math.floor(Date.now() / 1000);
 
         await oauthStore.registerClient(clientId, {
           clientId,
@@ -266,22 +265,14 @@ export function createOAuthRouter(config: OAuthConfig) {
 
         logger.info("OAuth client registered", { clientName });
 
-        // Return a full RFC 7591 client info document. We issue both a
-        // client_id and a client_secret even though token_endpoint_auth_method
-        // is "none" — some orchestrators (notably Claude Desktop's) expect a
-        // client_secret in the registration response regardless of the
-        // declared auth method, and silently abandon the OAuth flow if it's
-        // missing. /token accepts "none" auth (no secret) or client_secret_post
-        // (secret echoed back).
+        // Minimal RFC 7591 response, matching the working nutrition-mcp
+        // reference exactly. Some OAuth orchestrators (including Claude's)
+        // strict-parse the response and silently abort if they encounter
+        // fields with values they don't like — keep the shape tiny.
         return c.json({
           client_id: clientId,
           client_secret: clientSecret,
-          client_id_issued_at: issuedAt,
           redirect_uris: redirectUris,
-          token_endpoint_auth_method: "none",
-          grant_types: ["authorization_code", "refresh_token"],
-          response_types: ["code"],
-          ...(clientName ? { client_name: clientName } : {}),
         });
       } catch (error) {
         logger.error("OAuth client registration failed", {
