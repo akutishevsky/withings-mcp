@@ -8,11 +8,35 @@ import type { AppContext } from "../types/hono.js";
 
 const logger = createLogger({ component: "mcp-endpoints" });
 
-// Session tracking: sessionId -> { transport, mcpToken }
-const sessions = new Map<string, {
+// Idle sessions are evicted after this many ms without any HTTP activity.
+// Clients (Claude Desktop, web, mobile) usually drop the SSE stream without
+// sending DELETE, so without this sweep the session Map grows unbounded.
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+const SWEEP_INTERVAL_MS = 5 * 60 * 1000;
+
+interface Session {
   transport: WebStandardStreamableHTTPServerTransport;
   mcpToken: string;
-}>();
+  lastActivityAt: number;
+}
+
+const sessions = new Map<string, Session>();
+
+const sweep = setInterval(() => {
+  const cutoff = Date.now() - IDLE_TIMEOUT_MS;
+  for (const [id, session] of sessions) {
+    if (session.lastActivityAt < cutoff) {
+      sessions.delete(id);
+      session.transport.close().catch((err) => {
+        logger.warn("Error closing idle transport", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
+      logger.info("Evicted idle MCP session");
+    }
+  }
+}, SWEEP_INTERVAL_MS);
+sweep.unref?.();
 
 /**
  * Unified handler for /mcp endpoint (GET, POST, DELETE).
@@ -42,6 +66,7 @@ export const handleMcp = async (c: AppContext) => {
   // `createMcpHonoApp` installs on the app, so the transport reuses it
   // instead of re-parsing the request body.
   if (session) {
+    session.lastActivityAt = Date.now();
     return session.transport.handleRequest(c.req.raw, {
       parsedBody: c.get("parsedBody"),
     });
@@ -56,7 +81,11 @@ export const handleMcp = async (c: AppContext) => {
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: () => crypto.randomUUID(),
     onsessioninitialized: (id) => {
-      sessions.set(id, { transport, mcpToken });
+      sessions.set(id, {
+        transport,
+        mcpToken,
+        lastActivityAt: Date.now(),
+      });
       logger.info("MCP session established");
     },
     onsessionclosed: (id) => {
@@ -64,6 +93,13 @@ export const handleMcp = async (c: AppContext) => {
       logger.info("MCP session closed");
     },
   });
+
+  // Belt-and-suspenders: onsessionclosed only fires on explicit DELETE.
+  // onclose fires whenever the transport itself is torn down (idle sweep,
+  // server shutdown, internal SDK errors), so wire both.
+  transport.onclose = () => {
+    if (transport.sessionId) sessions.delete(transport.sessionId);
+  };
 
   const server = new McpServer(
     { name: "withings-mcp", version: "2.1.0" },
