@@ -193,7 +193,11 @@ export function createApp(config: ServerConfig) {
   // MCP endpoint — SDK transport handles GET, POST, DELETE internally
   app.all(MCP_ENDPOINT, authenticateBearer, handleMcp);
 
-  // OAuth Authorization Server Metadata (RFC 8414)
+  // OAuth Authorization Server Metadata (RFC 8414). Shape matches the
+  // working nutrition-mcp reference exactly. Extra/non-standard fields
+  // (scopes_supported, response_modes_supported, mcp_endpoint) appear to
+  // cause strict claude.ai validators to reject the document, producing
+  // step=start_error before OAuth can begin.
   app.get("/.well-known/oauth-authorization-server", (c) => {
     const baseUrl = getPublicBaseUrl(c);
     return c.json({
@@ -201,14 +205,10 @@ export function createApp(config: ServerConfig) {
       authorization_endpoint: `${baseUrl}/authorize`,
       token_endpoint: `${baseUrl}/token`,
       registration_endpoint: `${baseUrl}/register`,
-      scopes_supported: [],
-      response_types_supported: ["code"],
-      response_modes_supported: ["query"],
       grant_types_supported: ["authorization_code", "refresh_token"],
-      token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
+      response_types_supported: ["code"],
       code_challenge_methods_supported: ["S256"],
-      // MCP-specific metadata
-      mcp_endpoint: `${baseUrl}${MCP_ENDPOINT}`,
+      token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
     });
   });
 
