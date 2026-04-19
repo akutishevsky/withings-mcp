@@ -47,6 +47,17 @@ function prepareSseResponse(res: Response): Response {
 
   const merged = new ReadableStream<Uint8Array>({
     start(controller) {
+      // Flush an initial keep-alive immediately so the client (and any
+      // buffering proxy in front of us) sees bytes right away and treats
+      // the stream as live. Without this first byte, Cloudflare may buffer
+      // the response and Claude Desktop times out before the SDK writes
+      // anything of its own.
+      try {
+        controller.enqueue(keepAlive);
+      } catch {
+        // controller unexpectedly closed already; nothing to do
+      }
+
       const reader = upstream.getReader();
       let closed = false;
 
