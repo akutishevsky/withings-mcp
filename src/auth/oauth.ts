@@ -397,6 +397,14 @@ export function createOAuthRouter(config: OAuthConfig) {
     redirectUrl.searchParams.append("code", authCode);
     redirectUrl.searchParams.append("state", session.state);
 
+    logger.info("Redirecting to client callback", {
+      host: redirectUrl.host,
+      pathname: redirectUrl.pathname,
+      hasCode: Boolean(redirectUrl.searchParams.get("code")),
+      hasState: Boolean(redirectUrl.searchParams.get("state")),
+      existingParams: Array.from(new URL(session.redirectUri).searchParams.keys()),
+    });
+
     return c.redirect(redirectUrl.toString());
   });
 
