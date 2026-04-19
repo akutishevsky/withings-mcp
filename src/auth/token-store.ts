@@ -124,6 +124,27 @@ class TokenStore {
       throw new Error(`Failed to delete token: ${error.message}`);
     }
   }
+
+  // Rotate the MCP token (for OAuth refresh_token grant). Keeps all stored
+  // Withings credentials and user mapping intact, just swaps the public-facing
+  // token value and extends the TTL.
+  async rotateToken(oldToken: string, newToken: string): Promise<void> {
+    const supabase = getSupabaseClient();
+    const expiresAt = new Date(Date.now() + TTL_MS).toISOString();
+
+    const { error } = await supabase
+      .from("mcp_tokens")
+      .update({
+        mcp_token: newToken,
+        expires_at: expiresAt,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("mcp_token", oldToken);
+
+    if (error) {
+      throw new Error(`Failed to rotate token: ${error.message}`);
+    }
+  }
 }
 
 export const tokenStore = new TokenStore();
