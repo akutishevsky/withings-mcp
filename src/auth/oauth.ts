@@ -255,21 +255,27 @@ export function createOAuthRouter(config: OAuthConfig) {
             : undefined;
 
         const clientId = crypto.randomUUID();
+        const clientSecret = crypto.randomUUID();
         const issuedAt = Math.floor(Date.now() / 1000);
 
         await oauthStore.registerClient(clientId, {
           clientId,
+          clientSecret,
           redirectUris,
         });
 
         logger.info("OAuth client registered", { clientName });
 
-        // Return a full RFC 7591 client info document so the MCP client
-        // knows how to auth at /token (token_endpoint_auth_method: "none"
-        // for public clients like Claude Desktop) and which grant/response
-        // types are supported.
+        // Return a full RFC 7591 client info document. We issue both a
+        // client_id and a client_secret even though token_endpoint_auth_method
+        // is "none" — some orchestrators (notably Claude Desktop's) expect a
+        // client_secret in the registration response regardless of the
+        // declared auth method, and silently abandon the OAuth flow if it's
+        // missing. /token accepts "none" auth (no secret) or client_secret_post
+        // (secret echoed back).
         return c.json({
           client_id: clientId,
+          client_secret: clientSecret,
           client_id_issued_at: issuedAt,
           redirect_uris: redirectUris,
           token_endpoint_auth_method: "none",
