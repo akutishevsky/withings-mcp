@@ -14,7 +14,6 @@
  * - debug: Detailed diagnostic information (disabled in production)
  */
 
-import process from "node:process";
 const redactedFields = [
   // Authentication
   "token",
@@ -70,7 +69,7 @@ class Logger {
   private context: Record<string, unknown>;
 
   constructor(context: Record<string, unknown> = {}) {
-    const envLevel = (process.env.LOG_LEVEL || "info").toLowerCase() as LogLevel;
+    const envLevel = (Bun.env.LOG_LEVEL || "info").toLowerCase() as LogLevel;
     this.level = LOG_LEVELS[envLevel] || LOG_LEVELS.info;
     this.context = context;
   }

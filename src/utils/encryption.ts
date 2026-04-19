@@ -1,6 +1,5 @@
 import crypto from "node:crypto";
 import { Buffer } from "node:buffer";
-import process from "node:process";
 
 /**
  * Encryption utility for sensitive data using AES-256-GCM
@@ -24,7 +23,7 @@ function deriveKey(masterSecret: string, salt: Buffer): Buffer {
  * Get or generate encryption master secret from environment
  */
 function getMasterSecret(): string {
-  const secret = process.env.ENCRYPTION_SECRET;
+  const secret = Bun.env.ENCRYPTION_SECRET;
   if (!secret) {
     throw new Error(
       "ENCRYPTION_SECRET environment variable is required. Generate one with: openssl rand -hex 32"

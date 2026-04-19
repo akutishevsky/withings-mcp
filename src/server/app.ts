@@ -6,7 +6,6 @@ import { createOAuthRouter } from "../auth/oauth.js";
 import { authenticateBearer } from "./middleware.js";
 import { handleMcp } from "./mcp-endpoints.js";
 import type { AppEnv } from "../types/hono.js";
-import process from "node:process";
 
 export interface ServerConfig {
   oauthConfig: {
@@ -93,7 +92,7 @@ export function createApp(config: ServerConfig) {
       }
 
       // Allow configured origins (comma-separated list in env var)
-      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()) || [];
+      const allowedOrigins = Bun.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()) || [];
       if (allowedOrigins.includes(origin)) {
         return origin;
       }
