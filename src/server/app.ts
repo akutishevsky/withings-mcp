@@ -18,6 +18,23 @@ export interface ServerConfig {
 const MCP_ENDPOINT = "/mcp";
 
 /**
+ * Resolve the externally-visible base URL for this request.
+ * Honors x-forwarded-proto so URLs advertised to clients use https when the
+ * server sits behind a TLS-terminating reverse proxy (Cloudflare, DO App Platform).
+ */
+// deno-lint-ignore no-explicit-any
+function getPublicBaseUrl(c: any): string {
+  const url = new URL(c.req.url);
+  const forwardedProto = c.req.header("x-forwarded-proto");
+  if (forwardedProto) {
+    url.protocol = `${forwardedProto.split(",")[0].trim()}:`;
+  }
+  return url.origin;
+}
+
+export { getPublicBaseUrl };
+
+/**
  * Create and configure the Hono application
  */
 export function createApp(config: ServerConfig) {
@@ -161,16 +178,9 @@ export function createApp(config: ServerConfig) {
   // MCP endpoint — SDK transport handles GET, POST, DELETE internally
   app.all(MCP_ENDPOINT, authenticateBearer, handleMcp);
 
-  // OAuth metadata discovery endpoint
+  // OAuth Authorization Server Metadata (RFC 8414)
   app.get("/.well-known/oauth-authorization-server", (c) => {
-    // Respect x-forwarded-proto so the discovery doc advertises https when the
-    // server sits behind a TLS-terminating reverse proxy (Cloudflare, DO App Platform).
-    const url = new URL(c.req.url);
-    const forwardedProto = c.req.header("x-forwarded-proto");
-    if (forwardedProto) {
-      url.protocol = `${forwardedProto.split(",")[0].trim()}:`;
-    }
-    const baseUrl = url.origin;
+    const baseUrl = getPublicBaseUrl(c);
     return c.json({
       issuer: baseUrl,
       authorization_endpoint: `${baseUrl}/authorize`,
@@ -182,6 +192,19 @@ export function createApp(config: ServerConfig) {
       token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
       // MCP-specific metadata
       mcp_endpoint: `${baseUrl}${MCP_ENDPOINT}`,
+    });
+  });
+
+  // OAuth Protected Resource Metadata (RFC 9728) — tells MCP clients which
+  // authorization server protects this resource. Required by the MCP 2025-06-18
+  // auth spec so clients know to run OAuth discovery after a 401 from /mcp.
+  app.get("/.well-known/oauth-protected-resource", (c) => {
+    const baseUrl = getPublicBaseUrl(c);
+    return c.json({
+      resource: baseUrl,
+      authorization_servers: [baseUrl],
+      bearer_methods_supported: ["header"],
+      scopes_supported: [],
     });
   });
 
