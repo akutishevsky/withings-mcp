@@ -7,6 +7,7 @@ import type { Context, Next } from "hono";
 export type AppEnv = {
   Variables: {
     accessToken: string;
+    parsedBody?: unknown;
   };
 };
 

@@ -1,5 +1,7 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+import {
+  McpServer,
+  WebStandardStreamableHTTPServerTransport,
+} from "@modelcontextprotocol/server";
 import { registerAllTools } from "../tools/index.js";
 import { createLogger } from "../utils/logger.js";
 import type { AppContext } from "../types/hono.js";
@@ -35,9 +37,14 @@ export const handleMcp = async (c: AppContext) => {
     return c.json({ error: "forbidden" }, 403);
   }
 
-  // Existing session — forward to its transport
+  // Existing session — forward to its transport.
+  // `parsedBody` is populated by the JSON body parser middleware that
+  // `createMcpHonoApp` installs on the app, so the transport reuses it
+  // instead of re-parsing the request body.
   if (session) {
-    return session.transport.handleRequest(c.req.raw);
+    return session.transport.handleRequest(c.req.raw, {
+      parsedBody: c.get("parsedBody"),
+    });
   }
 
   // No session — only POST can initialize
@@ -65,5 +72,7 @@ export const handleMcp = async (c: AppContext) => {
   registerAllTools(server, mcpToken);
   await server.connect(transport);
 
-  return transport.handleRequest(c.req.raw);
+  return transport.handleRequest(c.req.raw, {
+    parsedBody: c.get("parsedBody"),
+  });
 };

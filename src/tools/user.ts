@@ -1,4 +1,5 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import { McpServer } from "@modelcontextprotocol/server";
 import { getUserDevices, getUserGoals } from "../withings/api.js";
 import { addReadableTimestamps } from "../utils/timestamp.js";
 import { withAnalytics, TOOL_ANNOTATIONS, toolResponse } from "./index.js";
@@ -11,7 +12,7 @@ export function registerUserTools(server: McpServer, mcpAccessToken: string) {
       title: "User Devices",
       description:
         "Get the list of devices linked to the user's account. Returns device information including type, model, battery level, MAC address, firmware version, network status, timezone, and session dates.",
-      inputSchema: {},
+      inputSchema: z.object({}),
       annotations: TOOL_ANNOTATIONS,
     },
     () => {
@@ -37,7 +38,7 @@ export function registerUserTools(server: McpServer, mcpAccessToken: string) {
       title: "User Goals",
       description:
         "Get the user's health and fitness goals. Returns goals for steps (daily step count target), sleep (daily sleep duration target in seconds), and weight (target weight with value and unit).",
-      inputSchema: {},
+      inputSchema: z.object({}),
       annotations: TOOL_ANNOTATIONS,
     },
     () => {
