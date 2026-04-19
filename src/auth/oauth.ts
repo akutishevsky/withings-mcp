@@ -237,24 +237,55 @@ export function createOAuthRouter(config: OAuthConfig) {
   const oauth = new Hono();
 
   // Dynamic client registration (open for MCP compatibility, protected by rate limiting)
+  // RFC 7591 — https://datatracker.ietf.org/doc/html/rfc7591
   oauth.post(
     "/register",
     rateLimit({ maxRequests: 30, windowMs: 3600000 }), // 30 requests per hour
     async (c) => {
-      const body = await c.req.json();
-      const clientId = crypto.randomUUID();
+      try {
+        const body = await c.req.json().catch(() => ({} as Record<string, unknown>));
+        const redirectUris = Array.isArray((body as { redirect_uris?: unknown }).redirect_uris)
+          ? ((body as { redirect_uris: unknown[] }).redirect_uris.filter(
+              (u): u is string => typeof u === "string"
+            ))
+          : [];
+        const clientName =
+          typeof (body as { client_name?: unknown }).client_name === "string"
+            ? (body as { client_name: string }).client_name
+            : undefined;
 
-      await oauthStore.registerClient(clientId, {
-        clientId,
-        redirectUris: body.redirect_uris || [],
-      });
+        const clientId = crypto.randomUUID();
+        const issuedAt = Math.floor(Date.now() / 1000);
 
-      logger.info("OAuth client registered");
+        await oauthStore.registerClient(clientId, {
+          clientId,
+          redirectUris,
+        });
 
-      return c.json({
-        client_id: clientId,
-        redirect_uris: body.redirect_uris || [],
-      });
+        logger.info("OAuth client registered", { clientName });
+
+        // Return a full RFC 7591 client info document so the MCP client
+        // knows how to auth at /token (token_endpoint_auth_method: "none"
+        // for public clients like Claude Desktop) and which grant/response
+        // types are supported.
+        return c.json({
+          client_id: clientId,
+          client_id_issued_at: issuedAt,
+          redirect_uris: redirectUris,
+          token_endpoint_auth_method: "none",
+          grant_types: ["authorization_code", "refresh_token"],
+          response_types: ["code"],
+          ...(clientName ? { client_name: clientName } : {}),
+        });
+      } catch (error) {
+        logger.error("OAuth client registration failed", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return c.json(
+          { error: "invalid_client_metadata", error_description: "Client registration failed" },
+          400
+        );
+      }
     }
   );
 
