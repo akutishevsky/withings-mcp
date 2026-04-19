@@ -1,0 +1,10 @@
+node_modules
+build
+.env
+.env.*
+*.md
+.git
+.gitignore
+deno.json
+deno.lock
+supabase

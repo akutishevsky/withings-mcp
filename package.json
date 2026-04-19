@@ -3,11 +3,13 @@
   "version": "1.4.1",
   "description": "MCP server for Withings health data integration",
   "type": "module",
-  "main": "build/index.js",
+  "main": "src/index.ts",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "generate-secret": "node -e \"console.log('ENCRYPTION_SECRET=' + require('crypto').randomBytes(32).toString('hex'))\""
+    "start": "bun run src/index.ts",
+    "dev": "bun --hot src/index.ts",
+    "build": "bun build src/index.ts --target bun --outdir build",
+    "typecheck": "tsc --noEmit",
+    "generate-secret": "bun -e \"console.log('ENCRYPTION_SECRET=' + require('crypto').randomBytes(32).toString('hex'))\""
   },
   "keywords": [
     "mcp",
@@ -26,7 +28,6 @@
   },
   "homepage": "https://github.com/akutishevsky/withings-mcp#readme",
   "dependencies": {
-    "@hono/node-server": "^1.13.7",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@supabase/supabase-js": "^2.45.0",
     "hono": "^4.10.5",
@@ -34,7 +35,7 @@
     "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
+    "@types/bun": "latest",
     "typescript": "^5.7.2"
   }
 }

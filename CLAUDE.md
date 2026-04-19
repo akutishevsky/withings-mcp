@@ -12,22 +12,16 @@ This is an MCP (Model Context Protocol) server that integrates Withings health d
 
 ## Development Commands
 
-### Building
-```bash
-npm run build        # Compile TypeScript to JavaScript (outputs to ./build)
-npm run dev          # Watch mode - recompile on changes
-```
-
 ### Running
 ```bash
-npm start            # Run the compiled server (requires build first)
-deno run --allow-net --allow-env --allow-read --allow-write build/index.js  # Run with Deno
+bun run start        # Run the server (Bun executes TypeScript directly)
+bun run dev          # Hot-reload mode for local development
+bun run typecheck    # Type-check with tsc (no emit)
+bun run build        # Bundle for production (outputs to ./build)
 ```
 
 ### Deployment
-```bash
-deno deploy --prod   # Deploy to Deno Deploy
-```
+The project ships with a Dockerfile based on `oven/bun:1-alpine`. Build and run the image on any host that supports containers.
 
 ## Architecture
 

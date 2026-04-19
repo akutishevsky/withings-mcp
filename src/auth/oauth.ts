@@ -431,7 +431,15 @@ export function createOAuthRouter(config: OAuthConfig) {
         }),
       });
 
-      const tokenData = await tokenResponse.json();
+      const tokenData = await tokenResponse.json() as {
+        status: number;
+        body: {
+          access_token: string;
+          refresh_token: string;
+          userid: string;
+          expires_in: number;
+        };
+      };
 
       if (tokenData.status !== 0) {
         logger.error("Withings token exchange failed");
@@ -498,7 +506,15 @@ export async function refreshWithingsToken(
     }),
   });
 
-  const tokenData = await tokenResponse.json();
+  const tokenData = await tokenResponse.json() as {
+    status: number;
+    body: {
+      access_token: string;
+      refresh_token: string;
+      userid: string;
+      expires_in: number;
+    };
+  };
 
   if (tokenData.status !== 0) {
     logger.error("Withings token refresh failed");

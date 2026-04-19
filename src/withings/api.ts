@@ -92,7 +92,7 @@ export async function makeWithingsRequest<T = unknown>(
     body: params.toString(),
   });
 
-  const data = await response.json();
+  const data = await response.json() as { status: number; body: T };
 
   // Check Withings API status
   if (data.status !== 0) {
