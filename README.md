@@ -165,9 +165,8 @@ Want to run your own instance? Here's how to deploy this MCP server yourself.
 
 ### Prerequisites
 
-1. [Node.js](https://nodejs.org/) 18+ and npm installed
-2. [Deno CLI](https://deno.land/) installed for deployment
-3. A [Withings Developer Account](https://developer.withings.com/)
+1. [Bun](https://bun.sh/) 1.1+ installed
+2. A [Withings Developer Account](https://developer.withings.com/)
 
 ### Step 1: Create Withings Application
 
@@ -176,7 +175,7 @@ Want to run your own instance? Here's how to deploy this MCP server yourself.
 3. Note your **Client ID** and **Client Secret**
 4. Set your **Redirect URI** to: `https://your-domain.com/callback`
    - This must be a publicly accessible URL (localhost is not supported by Withings)
-   - Can be any domain where you'll host the server (e.g., Deno Deploy, your own server, etc.)
+   - Can be any domain where you'll host the server (e.g., Fly.io, Railway, your own server, etc.)
 
 ### Important: Remove Google Analytics
 
@@ -190,17 +189,17 @@ git clone https://github.com/your-username/withings-mcp.git
 cd withings-mcp
 
 # Install dependencies
-npm install
+bun install
 
 # Generate encryption secret
-npm run generate-secret
+bun run generate-secret
 # Copy the output - you'll need it for environment variables
 ```
 
 ### Step 2.5: Set Up Supabase Database
 
 1. Create a free project at [Supabase](https://supabase.com)
-2. Install the Supabase CLI: `npm install -g supabase`
+2. Install the Supabase CLI: `bun install -g supabase` (or use `brew install supabase/tap/supabase`)
 3. Link your project: `supabase link --project-ref <your-project-ref>`
 4. Apply the database migrations: `supabase db push`
 5. Get your credentials from Dashboard → Settings → API:
@@ -224,11 +223,8 @@ cp .env.example .env
 # SUPABASE_SECRET_KEY=your_service_role_key
 # PORT=3000
 
-# Build the project
-npm run build
-
-# Run locally
-npm start
+# Run locally (Bun executes TypeScript directly — no build step)
+bun run dev
 ```
 
 Make sure your redirect URI in the .env file matches the publicly accessible URL pointing to your local server.
@@ -236,12 +232,11 @@ Make sure your redirect URI in the .env file matches the publicly accessible URL
 ### Step 4: Deploy to Production
 
 ```bash
-# Build the project
-npm run build
-
-# Deploy to your hosting platform of choice
-# The build output is in the ./build directory
+# The project runs TypeScript directly with Bun — no build step required.
+bun run start
 ```
+
+Deploy to [DigitalOcean App Platform](https://www.digitalocean.com/products/app-platform) (its Bun buildpack detects `package.json` and runs `bun run start` automatically), or any other host that supports Bun.
 
 Set the following environment variables on your hosting platform:
 
@@ -291,7 +286,7 @@ Configure your MCP client with the following connection details:
 | `WITHINGS_CLIENT_ID` | Yes | Your Withings app client ID |
 | `WITHINGS_CLIENT_SECRET` | Yes | Your Withings app client secret |
 | `WITHINGS_REDIRECT_URI` | Yes | OAuth callback URL (must match Withings app settings) |
-| `ENCRYPTION_SECRET` | Yes | 32+ character secret for token encryption (generate with `npm run generate-secret`) |
+| `ENCRYPTION_SECRET` | Yes | 32+ character secret for token encryption (generate with `bun run generate-secret`) |
 | `SUPABASE_URL` | Yes | Your Supabase project URL (from Dashboard → Settings → API) |
 | `SUPABASE_SECRET_KEY` | Yes | Your Supabase service role key (from Dashboard → Settings → API) |
 | `PORT` | No | Server port (default: 3000) |
@@ -301,9 +296,11 @@ Configure your MCP client with the following connection details:
 ### Development Commands
 
 ```bash
-npm run build            # Compile TypeScript to JavaScript
-npm run dev              # Watch mode - recompile on changes
-npm run generate-secret  # Generate encryption secret for ENCRYPTION_SECRET env variable
+bun run start            # Run the server
+bun run dev              # Hot-reload mode
+bun run typecheck        # Type-check with tsc (no emit)
+bun run build            # Bundle for production (outputs to ./build)
+bun run generate-secret  # Generate encryption secret for ENCRYPTION_SECRET env variable
 ```
 
 ### Project Structure
@@ -337,7 +334,7 @@ All Withings access tokens, refresh tokens, and authorization codes are encrypte
 
 **Important**: Keep your `ENCRYPTION_SECRET`:
 - At least 32 characters long
-- Randomly generated (use `npm run generate-secret`)
+- Randomly generated (use `bun run generate-secret`)
 - Secure and never committed to version control
 - Consistent across server restarts
 
@@ -393,4 +390,4 @@ Built with:
 - [Withings API](https://developer.withings.com/)
 - [Hono](https://hono.dev/) web framework
 - [Supabase](https://supabase.com/) for database
-- [Deno Deploy](https://deno.com/deploy) for hosting
+- [Bun](https://bun.sh/) runtime

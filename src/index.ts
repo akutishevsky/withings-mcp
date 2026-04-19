@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { initSupabase } from "./db/supabase.js";
 import { initOAuthStore } from "./auth/oauth.js";
@@ -44,7 +44,10 @@ setOAuthConfig(oauthConfig);
 // Create and configure the app
 const app = createApp({ oauthConfig });
 
-// Export for Deno Deploy
+const port = Number.parseInt(process.env.PORT ?? "8080", 10);
+
+// Bun picks up the default export and starts the HTTP server automatically
 export default {
   fetch: app.fetch,
+  port,
 };
