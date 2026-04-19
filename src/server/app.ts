@@ -163,7 +163,14 @@ export function createApp(config: ServerConfig) {
 
   // OAuth metadata discovery endpoint
   app.get("/.well-known/oauth-authorization-server", (c) => {
-    const baseUrl = new URL(c.req.url).origin;
+    // Respect x-forwarded-proto so the discovery doc advertises https when the
+    // server sits behind a TLS-terminating reverse proxy (Cloudflare, DO App Platform).
+    const url = new URL(c.req.url);
+    const forwardedProto = c.req.header("x-forwarded-proto");
+    if (forwardedProto) {
+      url.protocol = `${forwardedProto.split(",")[0].trim()}:`;
+    }
+    const baseUrl = url.origin;
     return c.json({
       issuer: baseUrl,
       authorization_endpoint: `${baseUrl}/authorize`,
