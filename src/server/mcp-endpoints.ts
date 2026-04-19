@@ -69,7 +69,7 @@ export const handleMcp = async (c: AppContext) => {
   });
 
   const server = new McpServer(
-    { name: "withings-mcp", version: "1.4.1" },
+    { name: "withings-mcp", version: "2.0.0" },
     { capabilities: { tools: {} } }
   );
   registerAllTools(server, mcpToken);
