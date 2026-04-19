@@ -1,6 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createLogger } from "../utils/logger.js";
-import process from "node:process";
 
 const logger = createLogger({ component: "supabase" });
 
@@ -24,8 +23,8 @@ export function getSupabaseClient(): SupabaseDatabase {
  * Initialize Supabase client and verify connection
  */
 export async function initSupabase(): Promise<void> {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SECRET_KEY;
+  const supabaseUrl = Bun.env.SUPABASE_URL;
+  const supabaseKey = Bun.env.SUPABASE_SECRET_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
