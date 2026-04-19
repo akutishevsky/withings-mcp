@@ -6,7 +6,7 @@ import { createOAuthRouter } from "../auth/oauth.js";
 import { authenticateBearer } from "./middleware.js";
 import { handleMcp } from "./mcp-endpoints.js";
 import { createLogger } from "../utils/logger.js";
-import type { AppEnv } from "../types/hono.js";
+import type { AppContext, AppEnv } from "../types/hono.js";
 
 const accessLogger = createLogger({ component: "access" });
 
@@ -212,15 +212,22 @@ export function createApp(config: ServerConfig) {
   // OAuth Protected Resource Metadata (RFC 9728) — tells MCP clients which
   // authorization server protects this resource. Required by the MCP 2025-06-18
   // auth spec so clients know to run OAuth discovery after a 401 from /mcp.
-  app.get("/.well-known/oauth-protected-resource", (c) => {
+  //
+  // RFC 9728 allows a resource-path-suffixed metadata URL, so we also serve
+  // the same document at /.well-known/oauth-protected-resource/mcp for clients
+  // that resolve the metadata URL from the resource identifier.
+  const protectedResourceMetadata = (c: AppContext) => {
     const baseUrl = getPublicBaseUrl(c);
     return c.json({
-      resource: baseUrl,
+      // `resource` MUST be the full resource identifier — i.e. the MCP endpoint.
+      resource: `${baseUrl}${MCP_ENDPOINT}`,
       authorization_servers: [baseUrl],
       bearer_methods_supported: ["header"],
       scopes_supported: [],
     });
-  });
+  };
+  app.get("/.well-known/oauth-protected-resource", protectedResourceMetadata);
+  app.get("/.well-known/oauth-protected-resource/mcp", protectedResourceMetadata);
 
   // Favicon endpoint
   app.get("/favicon.ico", async (c) => {
