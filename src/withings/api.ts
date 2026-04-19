@@ -117,7 +117,7 @@ export async function makeWithingsRequest<T = unknown>(
     throw new Error(errorMsg);
   }
 
-  return data.body as T;
+  return data.body;
 }
 
 /**
