@@ -233,9 +233,10 @@ Make sure your redirect URI in the .env file matches the publicly accessible URL
 
 ```bash
 # The project runs TypeScript directly with Bun — no build step required.
-# Build a Docker image using the provided Dockerfile, or run:
 bun run start
 ```
+
+Deploy to [DigitalOcean App Platform](https://www.digitalocean.com/products/app-platform) (its Bun buildpack detects `package.json` and runs `bun run start` automatically), or any other host that supports Bun.
 
 Set the following environment variables on your hosting platform:
 

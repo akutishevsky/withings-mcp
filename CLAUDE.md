@@ -21,7 +21,7 @@ bun run build        # Bundle for production (outputs to ./build)
 ```
 
 ### Deployment
-The project ships with a Dockerfile based on `oven/bun:1-alpine`. Build and run the image on any host that supports containers.
+Deployed to DigitalOcean App Platform, which detects Bun automatically via its buildpack and runs `bun run start`.
 
 ## Architecture
 
