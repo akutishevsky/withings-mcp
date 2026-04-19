@@ -47,12 +47,13 @@ const port = Number.parseInt(Bun.env.PORT ?? "8080", 10);
 
 // Bun picks up the default export and starts the HTTP server automatically.
 //
-// idleTimeout defaults to 10 seconds, which kills long-lived SSE streams
-// used by MCP's Streamable HTTP transport (GET /mcp stays open to push
-// server->client events). Setting it to 0 disables the per-request idle
-// timeout so the transport decides when to close.
+// - hostname "0.0.0.0": bind on all interfaces so DO App Platform's health
+//   checker and the external load balancer can reach the container.
+// - idleTimeout 0: disables Bun's 10s per-request idle timeout, which would
+//   otherwise sever MCP's long-lived GET /mcp SSE stream mid-flight.
 export default {
   fetch: app.fetch,
   port,
+  hostname: "0.0.0.0",
   idleTimeout: 0,
 };

@@ -22,17 +22,18 @@ const MCP_ENDPOINT = "/mcp";
 
 /**
  * Resolve the externally-visible base URL for this request.
- * Honors x-forwarded-proto so URLs advertised to clients use https when the
- * server sits behind a TLS-terminating reverse proxy (Cloudflare, DO App Platform).
+ *
+ * DO App Platform / Cloudflare terminates TLS upstream and forwards the
+ * original scheme + host via x-forwarded-*. Without honoring those headers
+ * we'd advertise http://internal-hostname on discovery docs and break
+ * OAuth for external clients.
  */
 // deno-lint-ignore no-explicit-any
 function getPublicBaseUrl(c: any): string {
-  const url = new URL(c.req.url);
-  const forwardedProto = c.req.header("x-forwarded-proto");
-  if (forwardedProto) {
-    url.protocol = `${forwardedProto.split(",")[0].trim()}:`;
-  }
-  return url.origin;
+  const proto = (c.req.header("x-forwarded-proto") || "https").split(",")[0].trim();
+  const host = c.req.header("x-forwarded-host") || c.req.header("host");
+  if (host) return `${proto}://${host}`;
+  return new URL(c.req.url).origin;
 }
 
 export { getPublicBaseUrl };
@@ -211,25 +212,17 @@ export function createApp(config: ServerConfig) {
     });
   });
 
-  // OAuth Protected Resource Metadata (RFC 9728) — tells MCP clients which
-  // authorization server protects this resource. Required by the MCP 2025-06-18
-  // auth spec so clients know to run OAuth discovery after a 401 from /mcp.
-  //
-  // RFC 9728 allows a resource-path-suffixed metadata URL, so we also serve
-  // the same document at /.well-known/oauth-protected-resource/mcp for clients
-  // that resolve the metadata URL from the resource identifier.
-  const protectedResourceMetadata = (c: AppContext) => {
+  // OAuth Protected Resource Metadata (RFC 9728). Kept intentionally minimal
+  // to match what Claude Desktop expects — just `resource` (the origin) and
+  // `authorization_servers`. Extra fields caused stricter clients to reject
+  // the document during OAuth discovery.
+  app.get("/.well-known/oauth-protected-resource", (c) => {
     const baseUrl = getPublicBaseUrl(c);
     return c.json({
-      // `resource` MUST be the full resource identifier — i.e. the MCP endpoint.
-      resource: `${baseUrl}${MCP_ENDPOINT}`,
+      resource: baseUrl,
       authorization_servers: [baseUrl],
-      bearer_methods_supported: ["header"],
-      scopes_supported: [],
     });
-  };
-  app.get("/.well-known/oauth-protected-resource", protectedResourceMetadata);
-  app.get("/.well-known/oauth-protected-resource/mcp", protectedResourceMetadata);
+  });
 
   // Favicon endpoint
   app.get("/favicon.ico", async (c) => {

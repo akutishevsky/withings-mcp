@@ -9,15 +9,13 @@ const logger = createLogger({ component: "middleware" });
  * Build the WWW-Authenticate header pointing MCP clients at the Protected
  * Resource Metadata document (RFC 9728). Without this, clients receive a bare
  * 401 and have no way to discover the authorization server.
+ *
+ * Format matches what working MCP clients (Claude Desktop, VSCode) actually
+ * parse: a single `resource_metadata` parameter, no realm prefix.
  */
-function buildWwwAuthenticate(c: AppContext, error: "missing_token" | "invalid_token"): string {
+function buildWwwAuthenticate(c: AppContext): string {
   const resourceMetadata = `${getPublicBaseUrl(c)}/.well-known/oauth-protected-resource`;
-  const errorCode = error === "invalid_token" ? "invalid_token" : undefined;
-  const parts = [`Bearer realm="mcp"`, `resource_metadata="${resourceMetadata}"`];
-  if (errorCode) {
-    parts.push(`error="${errorCode}"`);
-  }
-  return parts.join(", ");
+  return `Bearer resource_metadata="${resourceMetadata}"`;
 }
 
 /**
@@ -31,7 +29,7 @@ export const authenticateBearer = async (c: AppContext, next: AppNext) => {
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     logger.warn(`Authentication failed on ${method} ${path}: missing or invalid authorization header`);
-    c.header("WWW-Authenticate", buildWwwAuthenticate(c, "missing_token"));
+    c.header("WWW-Authenticate", buildWwwAuthenticate(c));
     return c.json({ error: "unauthorized", error_description: "Bearer token required" }, 401);
   }
 
@@ -39,7 +37,7 @@ export const authenticateBearer = async (c: AppContext, next: AppNext) => {
   const isValid = await tokenStore.isValid(token);
   if (!isValid) {
     logger.warn(`Authentication failed on ${method} ${path}: invalid or expired token`);
-    c.header("WWW-Authenticate", buildWwwAuthenticate(c, "invalid_token"));
+    c.header("WWW-Authenticate", buildWwwAuthenticate(c));
     return c.json({ error: "invalid_token", error_description: "Token is invalid or expired" }, 401);
   }
 
