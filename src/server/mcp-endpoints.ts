@@ -13,6 +13,91 @@ const sessions = new Map<string, {
 }>();
 
 /**
+ * SSE keep-alive ping interval. Empty SSE comment lines every 15s prevent
+ * Cloudflare (which fronts DO App Platform) and strict clients from closing
+ * idle streams. 15s is well under Cloudflare's 100s HTTP/2 stream idle limit
+ * and under most client read timeouts.
+ */
+const SSE_KEEPALIVE_MS = 15_000;
+
+/**
+ * Wrap the SDK transport's Response for SSE streams:
+ *  - Tell Cloudflare / any nginx-style proxy NOT to buffer the stream
+ *    (X-Accel-Buffering: no). Without this, proxies may hold the stream
+ *    until enough bytes accumulate, causing clients to time out waiting.
+ *  - Inject SSE keep-alive comments every 15s so the connection stays
+ *    observably alive end-to-end.
+ *
+ * Non-SSE responses pass through unchanged.
+ */
+function prepareSseResponse(res: Response): Response {
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("text/event-stream") || !res.body) {
+    return res;
+  }
+
+  // Clone headers and disable edge buffering.
+  const headers = new Headers(res.headers);
+  headers.set("X-Accel-Buffering", "no");
+
+  // Inject keep-alive comments alongside the transport's own writes.
+  const encoder = new TextEncoder();
+  const keepAlive = encoder.encode(":keep-alive\n\n");
+  const upstream = res.body;
+
+  const merged = new ReadableStream<Uint8Array>({
+    start(controller) {
+      const reader = upstream.getReader();
+      let closed = false;
+
+      const interval = setInterval(() => {
+        if (closed) return;
+        try {
+          controller.enqueue(keepAlive);
+        } catch {
+          clearInterval(interval);
+        }
+      }, SSE_KEEPALIVE_MS);
+
+      const pump = async () => {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+        } catch (err) {
+          logger.warn("SSE upstream read failed", {
+            error: err instanceof Error ? err.message : String(err),
+          });
+        } finally {
+          closed = true;
+          clearInterval(interval);
+          try {
+            controller.close();
+          } catch {
+            // controller already closed
+          }
+        }
+      };
+
+      pump();
+    },
+    cancel(reason) {
+      logger.debug("SSE stream cancelled by client", {
+        reason: reason instanceof Error ? reason.message : String(reason ?? "unknown"),
+      });
+    },
+  });
+
+  return new Response(merged, {
+    status: res.status,
+    statusText: res.statusText,
+    headers,
+  });
+}
+
+/**
  * Unified handler for /mcp endpoint (GET, POST, DELETE).
  * Uses the SDK's WebStandardStreamableHTTPServerTransport which handles
  * all protocol details internally (SSE streaming, JSON-RPC validation,
@@ -55,7 +140,7 @@ export const handleMcp = async (c: AppContext) => {
 
   // Existing session — forward to its transport
   if (session) {
-    return session.transport.handleRequest(c.req.raw);
+    return prepareSseResponse(await session.transport.handleRequest(c.req.raw));
   }
 
   // No session — only POST can initialize.
@@ -96,5 +181,5 @@ export const handleMcp = async (c: AppContext) => {
   registerAllTools(server, mcpToken);
   await server.connect(transport);
 
-  return transport.handleRequest(c.req.raw);
+  return prepareSseResponse(await transport.handleRequest(c.req.raw));
 };
