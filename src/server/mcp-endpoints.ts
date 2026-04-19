@@ -52,9 +52,15 @@ export const handleMcp = async (c: AppContext) => {
     return c.json({ error: "invalid_request" }, 400);
   }
 
-  // New session — create transport + server
+  // New session — create transport + server.
+  //
+  // allowedHosts silences the SDK's "binding to 0.0.0.0 without DNS rebinding
+  // protection" warning on startup and rejects any request whose Host header
+  // doesn't match. Behind DO App Platform + Cloudflare the Host forwarded to
+  // us is withings-mcp.com; no other value should ever reach this handler.
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: () => crypto.randomUUID(),
+    allowedHosts: ["withings-mcp.com"],
     onsessioninitialized: (id) => {
       sessions.set(id, { transport, mcpToken });
       logger.info("MCP session established");
