@@ -200,10 +200,12 @@ export function createApp(config: ServerConfig) {
       authorization_endpoint: `${baseUrl}/authorize`,
       token_endpoint: `${baseUrl}/token`,
       registration_endpoint: `${baseUrl}/register`,
-      grant_types_supported: ["authorization_code", "refresh_token"],
+      scopes_supported: [],
       response_types_supported: ["code"],
-      code_challenge_methods_supported: ["S256"],
+      response_modes_supported: ["query"],
+      grant_types_supported: ["authorization_code", "refresh_token"],
       token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
+      code_challenge_methods_supported: ["S256"],
       // MCP-specific metadata
       mcp_endpoint: `${baseUrl}${MCP_ENDPOINT}`,
     });
