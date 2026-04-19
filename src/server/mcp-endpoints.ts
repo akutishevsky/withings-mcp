@@ -58,16 +58,22 @@ export const handleMcp = async (c: AppContext) => {
     return session.transport.handleRequest(c.req.raw);
   }
 
-  // No session — only POST can initialize
+  // No session — only POST can initialize.
+  //
+  // Per MCP Streamable HTTP spec, GET/DELETE without a session must return
+  // 405 Method Not Allowed (not 400). Some clients treat 4xx_non_405 as a
+  // permanent server error and abandon the connection, whereas 405 signals
+  // "try a different method" and nudges them to re-initialize via POST.
   if (c.req.method !== "POST") {
     logger.warn("MCP non-POST without session", {
       method: c.req.method,
       hasSessionIdHeader: Boolean(sessionId),
     });
+    c.header("Allow", "POST");
     return c.json({
-      error: "invalid_request",
-      error_description: "No session. Send an initialization POST to create one."
-    }, 400);
+      error: "method_not_allowed",
+      error_description: "No active session. Send an initialization POST first."
+    }, 405);
   }
 
   // New session — create transport + server
