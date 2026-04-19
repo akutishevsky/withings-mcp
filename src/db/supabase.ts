@@ -24,11 +24,11 @@ export function getSupabaseClient(): SupabaseDatabase {
  */
 export async function initSupabase(): Promise<void> {
   const supabaseUrl = Bun.env.SUPABASE_URL;
-  const supabaseKey = Bun.env.SUPABASE_SECRET_KEY;
+  const supabaseKey = Bun.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
-      "Missing Supabase environment variables. Set SUPABASE_URL and SUPABASE_SECRET_KEY."
+      "Missing Supabase environment variables. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
     );
   }
 
