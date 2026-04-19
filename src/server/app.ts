@@ -5,7 +5,10 @@ import { readFile } from "node:fs/promises";
 import { createOAuthRouter } from "../auth/oauth.js";
 import { authenticateBearer } from "./middleware.js";
 import { handleMcp } from "./mcp-endpoints.js";
+import { createLogger } from "../utils/logger.js";
 import type { AppEnv } from "../types/hono.js";
+
+const accessLogger = createLogger({ component: "access" });
 
 export interface ServerConfig {
   oauthConfig: {
@@ -39,6 +42,17 @@ export { getPublicBaseUrl };
  */
 export function createApp(config: ServerConfig) {
   const app = new Hono<AppEnv>();
+
+  // Access log — records every inbound request so we can see what a client is
+  // (or isn't) hitting. Runs first so even 4xx/5xx / short-circuit responses
+  // from later middleware are logged.
+  app.use("*", async (c, next) => {
+    const start = Date.now();
+    const ua = c.req.header("user-agent") || "-";
+    await next();
+    const ms = Date.now() - start;
+    accessLogger.info(`${c.req.method} ${c.req.path} -> ${c.res.status} ${ms}ms ua="${ua}"`);
+  });
 
   // HTTPS redirect in production (behind reverse proxy)
   app.use("*", async (c, next) => {
