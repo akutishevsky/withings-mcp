@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { getSleep, getSleepSummary } from "../withings/api.js";
 import {
   addReadableTimestamps,
@@ -16,7 +16,7 @@ export function registerSleepTools(server: McpServer, mcpAccessToken: string) {
       title: "Sleep Data",
       description:
         "Get high-frequency sleep data captured during sleep, including sleep stages and health metrics at minute-level resolution. Use this for detailed analysis of sleep patterns. For aggregated summaries, use get_sleep_summary instead. Note: If startdate and enddate are separated by more than 24h, only the first 24h after startdate will be returned. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
-      inputSchema: {
+      inputSchema: z.object({
         startdate: z
           .string()
           .describe(
@@ -33,7 +33,7 @@ export function registerSleepTools(server: McpServer, mcpAccessToken: string) {
           .describe(
             "Comma-separated list of data fields to return. Available fields: 'hr' (heart rate bpm), 'rr' (respiration rate breaths/min), 'snoring' (total snoring seconds), 'sdnn_1' (HRV standard deviation ms), 'rmssd' (HRV root mean square ms), 'hrv_quality' (HRV quality score), 'mvt_score' (movement intensity 0-255, Sleep Analyzer only), 'chest_movement_rate' (events/min), 'withings_index' (breathing events/hour for Sleep Rx), 'breathing_sounds' (breathing sounds tracked in seconds). If not specified, all available fields are returned."
           ),
-      },
+      }),
       annotations: TOOL_ANNOTATIONS,
     },
     (args) => {
@@ -65,7 +65,7 @@ export function registerSleepTools(server: McpServer, mcpAccessToken: string) {
       title: "Sleep Summary",
       description:
         "Get aggregated sleep activity summaries for specified date range. Returns comprehensive sleep metrics including duration, stages, quality scores, heart rate, breathing analysis, and sleep apnea indicators. Use this for daily/weekly sleep reports. For detailed minute-by-minute data, use get_sleep instead. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
-      inputSchema: {
+      inputSchema: z.object({
         startdateymd: z
           .string()
           .optional()
@@ -98,7 +98,7 @@ export function registerSleepTools(server: McpServer, mcpAccessToken: string) {
               "**Score & Events**: 'sleep_score', 'night_events' (dictionary of event types with timestamps: 1=got in bed, 2=fell asleep, 3=woke up, 4=got out of bed, 5=manual asleep period, 6=manual awake period).\n" +
               "If not specified, all available fields are returned."
           ),
-      },
+      }),
       annotations: TOOL_ANNOTATIONS,
     },
     (args) => {

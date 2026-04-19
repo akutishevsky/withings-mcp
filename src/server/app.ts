@@ -1,6 +1,7 @@
-import { Hono } from "hono";
+import type { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
+import { createMcpHonoApp } from "@modelcontextprotocol/hono";
 import { readFile } from "node:fs/promises";
 import { createOAuthRouter } from "../auth/oauth.js";
 import { authenticateBearer } from "./middleware.js";
@@ -42,7 +43,12 @@ export { getPublicBaseUrl };
  * Create and configure the Hono application
  */
 export function createApp(config: ServerConfig) {
-  const app = new Hono<AppEnv>();
+  // `createMcpHonoApp` pre-installs JSON body parsing (exposed as
+  // `c.get("parsedBody")`) which the MCP transport reuses to avoid
+  // re-parsing the request body. `host: "0.0.0.0"` skips localhost
+  // DNS rebinding protection — we're behind DO App Platform with
+  // HTTPS + bearer auth so that check is not useful here.
+  const app = createMcpHonoApp({ host: "0.0.0.0" }) as unknown as Hono<AppEnv>;
 
   // Access log — records every inbound request so we can see what a client is
   // (or isn't) hitting. Runs first so even 4xx/5xx / short-circuit responses

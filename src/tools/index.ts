@@ -1,4 +1,4 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { registerSleepTools } from "./sleep.js";
 import { registerMeasureTools } from "./measure.js";
 import { registerUserTools } from "./user.js";

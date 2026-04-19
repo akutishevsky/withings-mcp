@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import {
   getMeasures,
   getWorkouts,
@@ -157,7 +157,7 @@ export function registerMeasureTools(server: McpServer, mcpAccessToken: string) 
       title: "Health Measures",
       description:
         "Get health measures including weight, height, body composition, blood pressure, heart rate, temperature, and more. Supports single or multiple measure types. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
-      inputSchema: {
+      inputSchema: z.object({
         meastype: z
           .number()
           .optional()
@@ -194,7 +194,7 @@ export function registerMeasureTools(server: McpServer, mcpAccessToken: string) 
           .describe(
             "Pagination offset. Use value from previous response when more=1"
           ),
-      },
+      }),
       annotations: TOOL_ANNOTATIONS,
     },
     (args) => {
@@ -252,7 +252,7 @@ export function registerMeasureTools(server: McpServer, mcpAccessToken: string) 
       title: "Workouts",
       description:
         "Get workout summaries including calories burned, heart rate data, distance, steps, elevation, and swimming metrics. Returns aggregated data for each workout session. By default returns ALL available data fields. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
-      inputSchema: {
+      inputSchema: z.object({
         startdateymd: z
           .string()
           .optional()
@@ -286,7 +286,7 @@ export function registerMeasureTools(server: McpServer, mcpAccessToken: string) 
           .describe(
             "Comma-separated list of data fields to return. Available fields: calories=Active calories(Kcal), intensity=Workout intensity(0-100), manual_distance=User-entered distance(m), manual_calories=User-entered calories(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec), pause_duration=User pause time(sec), algo_pause_duration=Device-detected pause time(sec), spo2_average=Average SpO2(%), steps=Step count, distance=Distance(m), elevation=Floors climbed, pool_laps=Pool lap count, strokes=Stroke count, pool_length=Pool length(m). Defaults to all fields."
           ),
-      },
+      }),
       annotations: TOOL_ANNOTATIONS,
     },
     (args) => {
@@ -343,7 +343,7 @@ export function registerMeasureTools(server: McpServer, mcpAccessToken: string) 
       title: "Daily Activity",
       description:
         "Get daily aggregated activity data including steps, distance, elevation, heart rate, calories, and activity durations (soft/moderate/intense). Returns summary data aggregated per day. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
-      inputSchema: {
+      inputSchema: z.object({
         startdateymd: z
           .string()
           .optional()
@@ -374,7 +374,7 @@ export function registerMeasureTools(server: McpServer, mcpAccessToken: string) 
           .describe(
             "Comma-separated list of data fields to return. Available fields: steps=Number of steps, distance=Distance travelled(m), elevation=Floors climbed, soft=Soft activity duration(sec), moderate=Moderate activity duration(sec), intense=Intense activity duration(sec), active=Sum of intense and moderate durations(sec), calories=Active calories burned(Kcal), totalcalories=Total calories burned(Kcal), hr_average=Average heart rate(bpm), hr_min=Min heart rate(bpm), hr_max=Max heart rate(bpm), hr_zone_0=Light zone duration(sec), hr_zone_1=Moderate zone duration(sec), hr_zone_2=Intense zone duration(sec), hr_zone_3=Maximal zone duration(sec). If not specified, all fields are returned."
           ),
-      },
+      }),
       annotations: TOOL_ANNOTATIONS,
     },
     (args) => {
@@ -408,7 +408,7 @@ export function registerMeasureTools(server: McpServer, mcpAccessToken: string) 
       title: "Intraday Activity",
       description:
         "Get high-frequency intraday activity data captured throughout the day. Returns time-series data with timestamps. Note: If startdate and enddate are separated by more than 24h, only the first 24h after startdate will be returned. If no dates provided, returns most recent activity data. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', 'last week', 'this month'), check if there is a date/time MCP tool available to detect the current date and time first.",
-      inputSchema: {
+      inputSchema: z.object({
         startdate: z
           .string()
           .optional()
@@ -427,7 +427,7 @@ export function registerMeasureTools(server: McpServer, mcpAccessToken: string) 
           .describe(
             "Comma-separated list of data fields to return. Available fields: steps=Number of steps, elevation=Floors climbed, calories=Active calories burned(Kcal), distance=Distance travelled(m), stroke=Number of strokes, pool_lap=Number of pool laps, duration=Activity duration(sec), heart_rate=Measured heart rate(bpm), spo2_auto=SpO2 percentage, rmssd=HRV-Root mean square of successive differences(ms), sdnn1=HRV-Standard deviation over 1 minute(ms), hrv_quality=HRV quality score. If not specified, all fields are returned."
           ),
-      },
+      }),
       annotations: TOOL_ANNOTATIONS,
     },
     (args) => {
