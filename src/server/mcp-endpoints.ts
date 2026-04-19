@@ -25,8 +25,19 @@ export const handleMcp = async (c: AppContext) => {
   // Look up existing session
   const session = sessionId ? sessions.get(sessionId) : undefined;
 
+  logger.debug("MCP request", {
+    method: c.req.method,
+    hasSessionIdHeader: Boolean(sessionId),
+    sessionFound: Boolean(session),
+    activeSessions: sessions.size,
+  });
+
   // Session ID provided but not found
   if (sessionId && !session) {
+    logger.warn("MCP session lookup miss", {
+      method: c.req.method,
+      activeSessions: sessions.size,
+    });
     return c.json({
       error: "invalid_session",
       error_description: "Session not found or expired"
@@ -49,6 +60,10 @@ export const handleMcp = async (c: AppContext) => {
 
   // No session — only POST can initialize
   if (c.req.method !== "POST") {
+    logger.warn("MCP non-POST without session", {
+      method: c.req.method,
+      hasSessionIdHeader: Boolean(sessionId),
+    });
     return c.json({
       error: "invalid_request",
       error_description: "No session. Send an initialization POST to create one."
