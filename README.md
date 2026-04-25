@@ -1,6 +1,8 @@
 # Withings MCP Server
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/J3J11D0MM5)
+[Help me pay for the servers on Patreon][patreon]
+
+[patreon]: https://patreon.com/akutishevskyi?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=akutishevsky_withings-mcp&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=akutishevsky_withings-mcp)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=akutishevsky_withings-mcp&metric=bugs)](https://sonarcloud.io/summary/new_code?id=akutishevsky_withings-mcp)

@@ -21,12 +21,6 @@ body {
   padding: 3rem 1.5rem 2rem;
 }
 
-.container .btn-container {
-  display: block !important;
-  margin: 0 auto 1.5rem;
-  width: fit-content;
-}
-
 /* Hero */
 .hero {
   text-align: center;
@@ -46,6 +40,30 @@ body {
   font-size: 1rem;
   max-width: 420px;
   margin: 0 auto;
+}
+
+.support-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.support-link:hover {
+  background: #2563eb;
+  color: #fff;
+  transform: translateY(-1px);
 }
 
 /* Status badge */
