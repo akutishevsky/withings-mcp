@@ -72,7 +72,8 @@ supabase/
     ├── 005_pg_cron_cleanup.sql  # pg_cron jobs for expired record cleanup
     ├── 006_mcp_sessions.sql     # Persisted MCP sessions (survive restarts)
     ├── 007_token_rotation_grace.sql # previous_mcp_token grace window
-    └── 008_sliding_window_rate_limit.sql # sliding-window check_rate_limit()
+    ├── 008_sliding_window_rate_limit.sql # sliding-window check_rate_limit()
+    └── 009_rate_limit_window_clamp.sql   # clamp stale reset_time from a longer window
 ```
 
 ### Logging
@@ -268,6 +269,8 @@ estimate = previous_count * (time_left_in_current_window / window) + current_cou
 ```
 
 Capacity therefore returns *continuously* as the previous window ages out, instead of snapping back at a boundary. The fixed window it replaced meant a client that burned its budget in the first seconds stayed locked out for the whole remainder — up to ~59 minutes on `/token`.
+
+The function **clamps a `reset_time` that sits further out than one window** (migration 009). Without that, a row written under a longer window keeps its distant boundary forever, the weight pins at 1.0, the window never rolls and capacity never decays — which reintroduces exactly the long lockout this design exists to prevent. The clamp makes window length safe to reconfigure.
 
 **The window length must stay short.** Smoothing lengthens the worst-case tail: a fully-burned window takes up to **two** window lengths to decay completely, versus one for a fixed window. Sliding windows are only an improvement when the window is small, which is why all three callers use 5 minutes. Do not raise them back to an hour.
 
