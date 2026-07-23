@@ -240,7 +240,7 @@ export function createOAuthRouter(config: OAuthConfig) {
   // RFC 7591 — https://datatracker.ietf.org/doc/html/rfc7591
   oauth.post(
     "/register",
-    rateLimit({ maxRequests: 30, windowMs: 3600000 }), // 30 requests per hour
+    rateLimit({ maxRequests: 5, windowMs: 300000 }), // 5 per 5 min (sliding)
     async (c) => {
       try {
         const body = await c.req.json().catch(() => ({} as Record<string, unknown>));
@@ -289,7 +289,7 @@ export function createOAuthRouter(config: OAuthConfig) {
   // Authorization endpoint - MCP client starts here
   oauth.get(
     "/authorize",
-    rateLimit({ maxRequests: 60, windowMs: 3600000 }), // 60 requests per hour
+    rateLimit({ maxRequests: 15, windowMs: 300000 }), // 15 per 5 min (sliding)
     async (c) => {
     const responseType = c.req.query("response_type");
     const clientId = c.req.query("client_id");
@@ -409,8 +409,13 @@ export function createOAuthRouter(config: OAuthConfig) {
   oauth.post(
     "/token",
     rateLimit({
-      maxRequests: 100,
-      windowMs: 3600000, // 100 requests per hour, per grant type
+      maxRequests: 30,
+      // 30 per 5 minutes, per grant type, on a sliding window. Short window is
+      // deliberate: the limiter smooths capacity across two windows, so a long
+      // one would take up to two hours to fully decay. A legitimate client
+      // needs 1-3 calls per authorization, so 30 is ample headroom while a
+      // stuck client recovers in minutes rather than the better part of a day.
+      windowMs: 300000,
       // Budget per grant type, not per endpoint. A client stuck retrying a
       // dead refresh_token used to burn the shared budget and then get 429ed
       // on authorization_code — the one exchange that could have repaired it —
