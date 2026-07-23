@@ -221,7 +221,7 @@ describe("addReadableTimestamps", () => {
     expect(out.model).toBe("Body Cardio");
     expect(out.afib).toBe(0);
     expect(out.active).toBe(true);
-    expect(out.note).toBe(null);
+    expect(out.note).toBeNull();
     expect(out.hr).toEqual([60, 61, 62]);
     expect(out.startdate).toBe("2024-01-15T11:30:00.000Z");
   });
@@ -290,8 +290,8 @@ describe("addReadableTimestamps", () => {
   });
 
   test("returns null, undefined and primitives unchanged", () => {
-    expect(addReadableTimestamps(null)).toBe(null);
-    expect(addReadableTimestamps(undefined)).toBe(undefined);
+    expect(addReadableTimestamps(null)).toBeNull();
+    expect(addReadableTimestamps(undefined)).toBeUndefined();
     expect(addReadableTimestamps(42)).toBe(42);
     expect(addReadableTimestamps("hello")).toBe("hello");
     expect(addReadableTimestamps(false)).toBe(false);
@@ -376,8 +376,8 @@ describe("addReadableNightEvents", () => {
   test("returns input unchanged when night_events is missing or falsy", () => {
     const noEvents = { timezone: "UTC", startdate: WINTER_TS };
     expect(addReadableNightEvents(noEvents)).toBe(noEvents);
-    expect(addReadableNightEvents(null)).toBe(null);
-    expect(addReadableNightEvents(undefined)).toBe(undefined);
+    expect(addReadableNightEvents(null)).toBeNull();
+    expect(addReadableNightEvents(undefined)).toBeUndefined();
     expect(addReadableNightEvents({ night_events: null })).toEqual({
       night_events: null,
     });

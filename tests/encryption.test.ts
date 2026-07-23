@@ -35,7 +35,7 @@ describe("encrypt / decrypt round trip", () => {
     const long = "withings-".repeat(20000); // ~180 KB
     const ciphertext = encrypt(long);
     expect(decrypt(ciphertext)).toBe(long);
-    expect(decrypt(ciphertext).length).toBe(long.length);
+    expect(decrypt(ciphertext)).toHaveLength(long.length);
   });
 
   test("ciphertext is base64 and is not the plaintext", () => {
@@ -50,8 +50,8 @@ describe("encrypt / decrypt round trip", () => {
 
   test("output carries the 64-byte salt+iv+tag header ahead of the ciphertext", () => {
     const raw = Buffer.from(encrypt("abc"), "base64");
-    expect(raw.length).toBe(HEADER_BYTES + 3); // GCM is a stream mode: no padding
-    expect(Buffer.from(encrypt(""), "base64").length).toBe(HEADER_BYTES);
+    expect(raw).toHaveLength(HEADER_BYTES + 3); // GCM is a stream mode: no padding
+    expect(Buffer.from(encrypt(""), "base64")).toHaveLength(HEADER_BYTES);
   });
 });
 

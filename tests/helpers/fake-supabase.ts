@@ -48,19 +48,32 @@ const NOT_HANDLED: Result = {
 export function makeFakeSupabase(handlers: Record<string, Handler>) {
   const calls: Operation[] = [];
 
-  function builder(op: Operation) {
-    // The chain is thenable: awaiting at any point resolves the handler.
-    const resolve = (): Result => {
+  type Chain = Promise<Result> & {
+    select(columns?: string): Chain;
+    eq(column: string, value: unknown): Chain;
+    gt(column: string, value: unknown): Chain;
+    single(): Chain;
+  };
+
+  function builder(op: Operation): Chain {
+    const run = (): Result => {
       calls.push({ ...op, filters: [...op.filters] });
       const handler = handlers[op.table];
       return handler ? handler(op) : NOT_HANDLED;
     };
 
-    const chain = {
+    // A real Promise rather than a hand-rolled thenable. Resolution is deferred
+    // to a microtask so the entire synchronous chain (.eq().gt().single()) is
+    // built before the handler inspects the operation — which mirrors
+    // supabase-js, where nothing is issued until the builder is awaited.
+    const settled = new Promise<Result>((resolve) => {
+      queueMicrotask(() => resolve(run()));
+    });
+
+    const chain = Object.assign(settled, {
       select(_columns?: string) {
         // .select() after a mutation means "return the affected rows"
-        if (op.action === "select") return chain;
-        op.returning = true;
+        if (op.action !== "select") op.returning = true;
         return chain;
       },
       eq(column: string, value: unknown) {
@@ -75,14 +88,7 @@ export function makeFakeSupabase(handlers: Record<string, Handler>) {
         op.single = true;
         return chain;
       },
-      then(onFulfilled: (r: Result) => unknown, onRejected?: (e: unknown) => unknown) {
-        try {
-          return Promise.resolve(resolve()).then(onFulfilled, onRejected);
-        } catch (err) {
-          return Promise.reject(err).then(onFulfilled, onRejected);
-        }
-      },
-    };
+    }) as Chain;
 
     return chain;
   }
