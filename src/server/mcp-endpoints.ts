@@ -130,6 +130,54 @@ function getOrRehydrateSession(
 }
 
 /**
+ * An initialize request always starts a fresh session, even if the client sent
+ * a stale session id alongside it — there is nothing to rehydrate, and adopting
+ * one would make the SDK reject the handshake as already initialized.
+ *
+ * `isInitializeRequest` is wrapped rather than passed to `.some()` directly:
+ * `.some()` also supplies an index and the source array, so a future signature
+ * change upstream would silently start feeding it the index.
+ */
+function isInitializeMessage(body: unknown): boolean {
+  return Array.isArray(body)
+    ? body.some((message) => isInitializeRequest(message))
+    : isInitializeRequest(body);
+}
+
+/**
+ * Resolve a session id this process has no memory of. Returning 404 is what the
+ * spec prescribes, but no shipping client implements the "404 -> re-initialize"
+ * contract (the SDK client never clears its session id), so a cold cache would
+ * wedge the client until the whole app is restarted.
+ */
+async function resolveStoredSession(
+  sessionId: string,
+  mcpToken: string
+): Promise<Session | "not_found" | "forbidden"> {
+  const stored = await sessionStore.get(sessionId);
+  if (!stored) return "not_found";
+  if (stored.mcpToken !== mcpToken) return "forbidden";
+
+  return getOrRehydrateSession(sessionId, mcpToken);
+}
+
+// Keep the stored session alive without adding a write to every tool call.
+function touchSession(session: Session, sessionId: string): void {
+  const now = Date.now();
+  session.lastActivityAt = now;
+
+  if (now - session.lastPersistedAt < ACTIVITY_PERSIST_INTERVAL_MS) return;
+
+  session.lastPersistedAt = now;
+  void sessionStore.touch(sessionId);
+}
+
+function forbidden(c: AppContext) {
+  logger.warn("Session access denied: token does not match session owner");
+  return c.json({ error: "forbidden" }, 403);
+}
+
+/**
  * Unified handler for /mcp endpoint (GET, POST, DELETE).
  * Uses the SDK's WebStandardStreamableHTTPServerTransport which handles
  * all protocol details internally (SSE streaming, JSON-RPC validation,
@@ -140,47 +188,24 @@ export const handleMcp = async (c: AppContext) => {
   const sessionId = c.req.header("mcp-session-id");
   const parsedBody = c.get("parsedBody");
 
-  // An initialize request always starts a fresh session, even if the client
-  // sent a stale session id alongside it — there is nothing to rehydrate, and
-  // adopting one would make the SDK reject the handshake as already
-  // initialized.
-  const isInit = Array.isArray(parsedBody)
-    ? parsedBody.some(isInitializeRequest)
-    : isInitializeRequest(parsedBody);
-
   let session = sessionId ? sessions.get(sessionId) : undefined;
 
-  if (sessionId && !session) {
-    if (isInit) {
-      // Stale session id sent alongside a handshake — ignore it and let the
-      // request start a fresh session below.
-    } else {
-      // A session id this process has no memory of: try the store before
-      // giving up. Returning 404 is what the spec prescribes, but no shipping
-      // client implements the "404 -> re-initialize" contract (the SDK client
-      // never clears its session id), so a cold cache would wedge the client
-      // until the whole app is restarted.
-      const stored = await sessionStore.get(sessionId);
+  if (sessionId && !session && !isInitializeMessage(parsedBody)) {
+    const resolved = await resolveStoredSession(sessionId, mcpToken);
 
-      if (!stored) {
-        return c.json({ error: "invalid_session" }, 404);
-      }
-
-      if (stored.mcpToken !== mcpToken) {
-        logger.warn(
-          "Session access denied: token does not match session owner"
-        );
-        return c.json({ error: "forbidden" }, 403);
-      }
-
-      session = await getOrRehydrateSession(sessionId, mcpToken);
+    if (resolved === "not_found") {
+      return c.json({ error: "invalid_session" }, 404);
     }
+    if (resolved === "forbidden") {
+      return forbidden(c);
+    }
+
+    session = resolved;
   }
 
   // Validate bearer token matches session owner
   if (session && session.mcpToken !== mcpToken) {
-    logger.warn("Session access denied: token does not match session owner");
-    return c.json({ error: "forbidden" }, 403);
+    return forbidden(c);
   }
 
   // Existing session — forward to its transport.
@@ -188,14 +213,7 @@ export const handleMcp = async (c: AppContext) => {
   // `createMcpHonoApp` installs on the app, so the transport reuses it
   // instead of re-parsing the request body.
   if (session && sessionId) {
-    session.lastActivityAt = Date.now();
-    if (
-      session.lastActivityAt - session.lastPersistedAt >=
-        ACTIVITY_PERSIST_INTERVAL_MS
-    ) {
-      session.lastPersistedAt = session.lastActivityAt;
-      void sessionStore.touch(sessionId);
-    }
+    touchSession(session, sessionId);
     return session.transport.handleRequest(c.req.raw, { parsedBody });
   }
 
