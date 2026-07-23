@@ -32,7 +32,7 @@
     "@modelcontextprotocol/hono": "^2.0.0-alpha.2",
     "@modelcontextprotocol/server": "^2.0.0-alpha.2",
     "@supabase/supabase-js": "^2.45.0",
-    "hono": "^4.11.4",
+    "hono": "^4.12.31",
     "zod": "^4.0.0"
   },
   "devDependencies": {

@@ -3,6 +3,7 @@
 import { initSupabase } from "./db/supabase.js";
 import { initOAuthStore } from "./auth/oauth.js";
 import { tokenStore } from "./auth/token-store.js";
+import { sessionStore } from "./auth/session-store.js";
 import { createApp } from "./server/app.js";
 import { setOAuthConfig } from "./config.js";
 import { initRateLimiter } from "./server/rate-limiter.js";
@@ -14,6 +15,7 @@ await initSupabase();
 
 // Initialize stores (now use Supabase internally)
 await tokenStore.init();
+await sessionStore.init();
 await initOAuthStore();
 await initRateLimiter();
 
