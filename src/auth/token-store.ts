@@ -23,6 +23,12 @@ interface McpTokenRow {
 
 const TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
+// After a rotation the superseded token stays resolvable for this long, so a
+// retried or concurrent refresh is handed the same token the winning request
+// got instead of being told its grant is dead. Long enough to cover a client's
+// immediate retry, short enough that a rotated token is not usable in practice.
+const ROTATION_GRACE_MS = 60 * 1000; // 60 seconds
+
 class TokenStore {
   async init(): Promise<void> {
     // No initialization needed - Supabase client is initialized separately
@@ -129,24 +135,83 @@ class TokenStore {
     }
   }
 
+  // Resolve a token presented to the refresh_token grant.
+  //
+  // Returns the token value that is currently live for that row. `isReplay`
+  // means the caller presented a token that has already been rotated away but
+  // is still inside the grace window — a retried or concurrent refresh — and
+  // must be handed the existing token rather than triggering a second
+  // rotation, which would strand whichever client stored the first response.
+  async resolveRefreshToken(
+    presentedToken: string
+  ): Promise<{ currentToken: string; isReplay: boolean } | null> {
+    const supabase = getSupabaseClient();
+    const now = new Date().toISOString();
+
+    const { data: live } = await supabase
+      .from("mcp_tokens")
+      .select("mcp_token")
+      .eq("mcp_token", presentedToken)
+      .gt("expires_at", now)
+      .single();
+
+    if (live) {
+      return {
+        currentToken: (live as { mcp_token: string }).mcp_token,
+        isReplay: false,
+      };
+    }
+
+    const { data: superseded } = await supabase
+      .from("mcp_tokens")
+      .select("mcp_token")
+      .eq("previous_mcp_token", presentedToken)
+      .gt("previous_token_expires_at", now)
+      .gt("expires_at", now)
+      .single();
+
+    if (superseded) {
+      return {
+        currentToken: (superseded as { mcp_token: string }).mcp_token,
+        isReplay: true,
+      };
+    }
+
+    return null;
+  }
+
   // Rotate the MCP token (for OAuth refresh_token grant). Keeps all stored
   // Withings credentials and user mapping intact, just swaps the public-facing
   // token value and extends the TTL.
-  async rotateToken(oldToken: string, newToken: string): Promise<void> {
+  //
+  // Returns false if no row still carried `oldToken` — i.e. a concurrent
+  // request won the rotation race. The caller must not hand `newToken` to the
+  // client in that case: it was never written, so it would authenticate
+  // nothing. Use resolveRefreshToken() to recover the winner's value.
+  async rotateToken(oldToken: string, newToken: string): Promise<boolean> {
     const supabase = getSupabaseClient();
     const expiresAt = new Date(Date.now() + TTL_MS).toISOString();
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("mcp_tokens")
       .update({
         mcp_token: newToken,
+        previous_mcp_token: oldToken,
+        previous_token_expires_at: new Date(
+          Date.now() + ROTATION_GRACE_MS
+        ).toISOString(),
         expires_at: expiresAt,
         updated_at: new Date().toISOString(),
       })
-      .eq("mcp_token", oldToken);
+      .eq("mcp_token", oldToken)
+      .select("mcp_token");
 
     if (error) {
       throw new Error(`Failed to rotate token: ${error.message}`);
+    }
+
+    if (!data || data.length === 0) {
+      return false;
     }
 
     // Sessions are owned by a token value, so they have to follow the
@@ -165,6 +230,8 @@ class TokenStore {
         error: err instanceof Error ? err.message : String(err),
       });
     }
+
+    return true;
   }
 }
 
