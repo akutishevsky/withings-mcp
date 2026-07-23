@@ -9,7 +9,9 @@
     "dev": "bun --hot src/index.ts",
     "build": "bun build src/index.ts --target bun --outdir build",
     "typecheck": "tsc --noEmit",
-    "generate-secret": "bun -e \"console.log('ENCRYPTION_SECRET=' + require('crypto').randomBytes(32).toString('hex'))\""
+    "generate-secret": "bun -e \"console.log('ENCRYPTION_SECRET=' + require('crypto').randomBytes(32).toString('hex'))\"",
+    "test": "bun test",
+    "test:db": "TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgres://postgres:postgres@localhost:5432/postgres} bun test"
   },
   "keywords": [
     "mcp",

@@ -1,0 +1,41 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Real Postgres so the SQL tests actually exercise the migrations and
+    # plpgsql. The rate-limit bugs this suite exists to catch only reproduce
+    # against a real server.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      # Actions pinned to full commit SHAs: a mutable tag can be repointed
+      # at arbitrary code by anyone who can push to the action's repo.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: latest
+      # --ignore-scripts: nothing here needs postinstall hooks, and running
+      # them would execute third-party code during CI installs.
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun run typecheck
+      - run: bun test
+        env:
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres

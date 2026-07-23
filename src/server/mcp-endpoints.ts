@@ -83,7 +83,10 @@ async function rehydrateSession(
   mcpToken: string
 ): Promise<Session> {
   const transport = new WebStandardStreamableHTTPServerTransport({
-    // Stateless mode passes `undefined` rather than the id, so close over it.
+    // Close over the id rather than taking the callback argument: this SDK
+    // passes `this.sessionId` (which we assign below, so it is correct today),
+    // but a stateless transport has no session of its own and a future version
+    // could reasonably pass `undefined` here.
     onsessionclosed: () => {
       sessions.delete(sessionId);
       void sessionStore.delete(sessionId).catch((err) => {
