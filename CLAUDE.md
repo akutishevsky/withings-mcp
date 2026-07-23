@@ -71,7 +71,8 @@ supabase/
     ├── 004_atomic_rate_limit.sql # Atomic rate limit PostgreSQL function
     ├── 005_pg_cron_cleanup.sql  # pg_cron jobs for expired record cleanup
     ├── 006_mcp_sessions.sql     # Persisted MCP sessions (survive restarts)
-    └── 007_token_rotation_grace.sql # previous_mcp_token grace window
+    ├── 007_token_rotation_grace.sql # previous_mcp_token grace window
+    └── 008_sliding_window_rate_limit.sql # sliding-window check_rate_limit()
 ```
 
 ### Logging
@@ -257,6 +258,25 @@ The `refresh_token` grant rotates the opaque MCP token value. Rotation is **idem
 - Grace applies **only** to the `/token` refresh path. `authenticateBearer` still accepts the live token only, so a superseded token cannot be used against `/mcp`.
 
 **Rate limiting is scoped per grant type** on `/token` (`rateLimit({ scope })`, identifier `${ip}:${path}:${grant_type}`). A client looping on a dead `refresh_token` used to exhaust the shared budget and then get 429ed on `authorization_code` — the only exchange that could repair it — locking the user out for the rest of the window. Hono caches the parsed form body, so the scope resolver reading it does not prevent the handler from parsing it again.
+
+### Rate Limiting Algorithm
+
+`check_rate_limit()` is a **weighted two-window sliding counter** (supabase/migrations/008_sliding_window_rate_limit.sql), not a fixed window. Each identifier keeps a current and a previous count, and the trailing rate is estimated as:
+
+```
+estimate = previous_count * (time_left_in_current_window / window) + current_count
+```
+
+Capacity therefore returns *continuously* as the previous window ages out, instead of snapping back at a boundary. The fixed window it replaced meant a client that burned its budget in the first seconds stayed locked out for the whole remainder — up to ~59 minutes on `/token`.
+
+**The window length must stay short.** Smoothing lengthens the worst-case tail: a fully-burned window takes up to **two** window lengths to decay completely, versus one for a fixed window. Sliding windows are only an improvement when the window is small, which is why all three callers use 5 minutes. Do not raise them back to an hour.
+
+Current limits (all 5-minute sliding windows, keyed per IP + path, plus grant type on `/token`):
+- `/token`: 30 — a legitimate client needs 1–3 calls per authorization
+- `/authorize`: 15
+- `/register`: 5
+
+Measured recovery for `/token` after burning all 30 instantly: fully blocked for 5 minutes, then linear recovery (28 available at +5m30s, 17 at +7m30s, 4 at +9m59s), fully clear by 10 minutes. On the denied path the function returns the moment capacity actually becomes available, so `Retry-After` is honest rather than pointing at a raw window boundary.
 
 **Token Store** (src/auth/token-store.ts):
 - Maps MCP tokens → Withings tokens (access, refresh, userId, expiry)
