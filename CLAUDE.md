@@ -70,7 +70,8 @@ supabase/
     ├── 001_initial_schema.sql   # Database schema (tables, indexes)
     ├── 004_atomic_rate_limit.sql # Atomic rate limit PostgreSQL function
     ├── 005_pg_cron_cleanup.sql  # pg_cron jobs for expired record cleanup
-    └── 006_mcp_sessions.sql     # Persisted MCP sessions (survive restarts)
+    ├── 006_mcp_sessions.sql     # Persisted MCP sessions (survive restarts)
+    └── 007_token_rotation_grace.sql # previous_mcp_token grace window
 ```
 
 ### Logging
@@ -245,6 +246,17 @@ Uses **Supabase PostgreSQL** (@supabase/supabase-js) for persistent storage:
 - `rate_limits`: Rate limiting counters (dynamic window TTL)
 - `mcp_sessions`: MCP session ID → owning MCP token (30 day TTL, supabase/migrations/006_mcp_sessions.sql)
 - `check_rate_limit()`: Atomic PostgreSQL function for race-condition-free rate limiting (uses `SELECT ... FOR UPDATE`)
+
+**Token Rotation & Refresh** (src/auth/token-store.ts, src/auth/oauth.ts):
+
+The `refresh_token` grant rotates the opaque MCP token value. Rotation is **idempotent within a 60s grace window** (`ROTATION_GRACE_MS`), because a bare rotate strands clients:
+
+- `rotateToken()` records the superseded value in `previous_mcp_token` / `previous_token_expires_at`, and uses `UPDATE ... .select()` so it can tell whether a row actually matched. It returns `false` when a concurrent request already rotated — the caller must **not** hand out its candidate token, which was never written and would authenticate nothing.
+- `resolveRefreshToken()` resolves a presented token to the currently-live value: first by `mcp_token`, then by `previous_mcp_token` inside the grace window. `isReplay: true` means the caller is retrying a rotation that already happened, and must be given the existing token rather than triggering a second rotation.
+- Net effect: a client whose first refresh response was lost retries and gets the same token, instead of a terminal `invalid_grant` that would permanently strand it.
+- Grace applies **only** to the `/token` refresh path. `authenticateBearer` still accepts the live token only, so a superseded token cannot be used against `/mcp`.
+
+**Rate limiting is scoped per grant type** on `/token` (`rateLimit({ scope })`, identifier `${ip}:${path}:${grant_type}`). A client looping on a dead `refresh_token` used to exhaust the shared budget and then get 429ed on `authorization_code` — the only exchange that could repair it — locking the user out for the rest of the window. Hono caches the parsed form body, so the scope resolver reading it does not prevent the handler from parsing it again.
 
 **Token Store** (src/auth/token-store.ts):
 - Maps MCP tokens → Withings tokens (access, refresh, userId, expiry)

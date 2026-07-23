@@ -408,7 +408,20 @@ export function createOAuthRouter(config: OAuthConfig) {
   // Token endpoint - MCP client exchanges code for token, or refreshes it
   oauth.post(
     "/token",
-    rateLimit({ maxRequests: 100, windowMs: 3600000 }), // 100 requests per hour
+    rateLimit({
+      maxRequests: 100,
+      windowMs: 3600000, // 100 requests per hour, per grant type
+      // Budget per grant type, not per endpoint. A client stuck retrying a
+      // dead refresh_token used to burn the shared budget and then get 429ed
+      // on authorization_code — the one exchange that could have repaired it —
+      // leaving the user unable to reconnect for the rest of the window.
+      // Hono caches the parsed form body, so reading it here does not stop the
+      // handler below from parsing it again.
+      scope: async (c) => {
+        const body = await c.req.parseBody();
+        return typeof body.grant_type === "string" ? body.grant_type : "unknown";
+      },
+    }),
     async (c) => {
     const body = await c.req.parseBody();
     const grantType = body.grant_type;
@@ -422,23 +435,63 @@ export function createOAuthRouter(config: OAuthConfig) {
     if (grantType === "refresh_token") {
       const refreshToken = body.refresh_token as string;
       if (!refreshToken) {
-        return c.json({ error: "invalid_request" }, 400);
+        logger.warn("Token refresh failed: refresh_token parameter missing");
+        return c.json({
+          error: "invalid_request",
+          error_description: "refresh_token is required for this grant type",
+        }, 400);
       }
-      const existing = await tokenStore.getTokens(refreshToken);
-      if (!existing) {
-        return c.json({ error: "invalid_grant" }, 400);
+
+      const resolved = await tokenStore.resolveRefreshToken(refreshToken);
+      if (!resolved) {
+        logger.warn(
+          "Token refresh failed: refresh token is unknown, expired, or past the rotation grace window"
+        );
+        return c.json({
+          error: "invalid_grant",
+          error_description:
+            "refresh_token is no longer valid; re-authorize to obtain a new one",
+        }, 400);
       }
-      const newToken = crypto.randomUUID();
-      await tokenStore.rotateToken(refreshToken, newToken);
+
+      // Rotation is idempotent within the grace window. A client that retried
+      // because it never received (or never stored) the first response gets
+      // handed the same token the winning request was issued, instead of a
+      // terminal invalid_grant that would strand it permanently.
+      let issuedToken = resolved.currentToken;
+
+      if (!resolved.isReplay) {
+        const candidate = crypto.randomUUID();
+        const rotated = await tokenStore.rotateToken(refreshToken, candidate);
+
+        if (rotated) {
+          issuedToken = candidate;
+        } else {
+          // Lost a concurrent rotation race: `candidate` was never written, so
+          // returning it would hand the client a token that authenticates
+          // nothing. Re-resolve and return whatever the winner issued.
+          const winner = await tokenStore.resolveRefreshToken(refreshToken);
+          if (!winner) {
+            logger.warn(
+              "Token refresh failed: lost rotation race and the winning token is no longer resolvable"
+            );
+            return c.json({ error: "invalid_grant" }, 400);
+          }
+          issuedToken = winner.currentToken;
+          logger.info("Token refresh resolved a concurrent rotation race");
+        }
+      } else {
+        logger.info("Token refresh replayed within grace window");
+      }
 
       const MCP_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
       c.header("Cache-Control", "no-store");
       c.header("Pragma", "no-cache");
       return c.json({
-        access_token: newToken,
+        access_token: issuedToken,
         token_type: "Bearer",
         expires_in: MCP_TOKEN_TTL_SECONDS,
-        refresh_token: newToken,
+        refresh_token: issuedToken,
       });
     }
 

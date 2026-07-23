@@ -7,6 +7,15 @@ const logger = createLogger({ component: "rate-limiter" });
 interface RateLimitConfig {
   maxRequests: number;
   windowMs: number;
+  /**
+   * Optional extra dimension appended to the `${ip}:${path}` identifier, giving
+   * distinct operations on one endpoint independent budgets.
+   *
+   * /token uses this to separate grant types: a client looping on a dead
+   * refresh_token must not be able to exhaust the authorization_code budget,
+   * because re-authorizing is the only thing that can actually repair it.
+   */
+  scope?: (c: Context) => Promise<string> | string;
 }
 
 class RateLimiter {
@@ -67,7 +76,20 @@ export function rateLimit(config: RateLimitConfig) {
                c.req.header("x-real-ip") ||
                "unknown";
 
-    const identifier = `${ip}:${c.req.path}`;
+    // A scope resolver reads the request body, so it must never be able to
+    // fail the request — an unparseable body just shares one bucket.
+    let scope = "";
+    if (config.scope) {
+      try {
+        scope = await config.scope(c);
+      } catch {
+        scope = "unknown";
+      }
+    }
+
+    const identifier = scope
+      ? `${ip}:${c.req.path}:${scope}`
+      : `${ip}:${c.req.path}`;
     const result = await rateLimiter.checkLimit(identifier, config);
 
     // Set rate limit headers
@@ -79,7 +101,7 @@ export function rateLimit(config: RateLimitConfig) {
       const retryAfter = Math.ceil((result.resetTime - Date.now()) / 1000);
       c.header("Retry-After", retryAfter.toString());
 
-      logger.warn("Rate limit exceeded", { ip, path: c.req.path });
+      logger.warn("Rate limit exceeded", { ip, path: c.req.path, scope });
 
       return c.json({
         error: "rate_limit_exceeded",
