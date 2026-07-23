@@ -1,5 +1,9 @@
 import { getSupabaseClient } from "../db/supabase.js";
 import { encrypt, decrypt } from "../utils/encryption.js";
+import { sessionStore } from "./session-store.js";
+import { createLogger } from "../utils/logger.js";
+
+const logger = createLogger({ component: "token-store" });
 
 export interface TokenData {
   withingsAccessToken: string;
@@ -143,6 +147,23 @@ class TokenStore {
 
     if (error) {
       throw new Error(`Failed to rotate token: ${error.message}`);
+    }
+
+    // Sessions are owned by a token value, so they have to follow the
+    // rotation — otherwise every session opened under the old bearer is
+    // rejected as belonging to a different client.
+    //
+    // Deliberately non-fatal: mcp_tokens has already been committed above, so
+    // throwing here would 500 the /token response while the client still holds
+    // a token that no longer exists — locking the user out until they redo the
+    // whole Withings OAuth flow. A stale session binding is far cheaper: it
+    // costs one 403 and a client reconnect.
+    try {
+      await sessionStore.rotateToken(oldToken, newToken);
+    } catch (err) {
+      logger.warn("Failed to rotate MCP session ownership after token rotation", {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 }
