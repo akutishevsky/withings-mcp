@@ -146,8 +146,14 @@ describe.skipIf(!hasDatabase)("migrations applied to Postgres", () => {
     // happens when the argument list matches exactly — change an argument type
     // in a later migration and Postgres creates an OVERLOAD instead, leaving
     // the old buggy definition live and making the PostgREST rpc() call
-    // ambiguous. src/server/rate-limiter.ts calls it as
-    // (p_identifier, p_max_requests, p_window_ms).
+    // ambiguous.
+    //
+    // The parameter NAMES are load-bearing, not just the types:
+    // src/server/rate-limiter.ts calls
+    //   supabase.rpc("check_rate_limit", { p_identifier, p_max_requests, p_window_ms })
+    // and PostgREST binds those by name. Renaming a parameter in a migration
+    // would leave the SQL valid but break every call at runtime, so assert the
+    // full identity — which is what pg_get_function_identity_arguments returns.
     const rows = await db.sql.unsafe(
       `SELECT pg_get_function_identity_arguments(p.oid) AS args
          FROM pg_proc p
@@ -157,7 +163,9 @@ describe.skipIf(!hasDatabase)("migrations applied to Postgres", () => {
     );
 
     expect(rows).toHaveLength(1);
-    expect(String(rows[0].args)).toBe("character varying, integer, bigint");
+    expect(String(rows[0].args)).toBe(
+      "p_identifier character varying, p_max_requests integer, p_window_ms bigint"
+    );
   });
 
   test("the live check_rate_limit is the clamped version from 009", async () => {
