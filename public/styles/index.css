@@ -61,11 +61,9 @@
   --fs-h3: 1.125rem;
   --fs-lead: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
   --fs-sub: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem);
-}
 
-/* ---- Design tokens: light theme (default) --------------------------------- */
+  /* ---- Design tokens: light theme (default) ------------------------------- */
 
-:root {
   color-scheme: light;
 
   --bg: #f7f9fc;

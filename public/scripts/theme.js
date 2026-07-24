@@ -1,9 +1,9 @@
 // Theme bootstrap + toggle. Loaded synchronously in <head> so the correct
 // theme is applied before first paint (no flash of wrong theme).
 (function () {
-  var STORAGE_KEY = "theme";
-  var root = document.documentElement;
-  var media = window.matchMedia("(prefers-color-scheme: dark)");
+  const STORAGE_KEY = "theme";
+  const root = document.documentElement;
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
 
   function stored() {
     try {
@@ -14,11 +14,11 @@
   }
 
   function apply(theme) {
-    root.setAttribute("data-theme", theme);
+    root.dataset.theme = theme;
   }
 
   function current() {
-    var saved = stored();
+    const saved = stored();
     if (saved === "light" || saved === "dark") return saved;
     return media.matches ? "dark" : "light";
   }
@@ -31,16 +31,16 @@
   });
 
   document.addEventListener("DOMContentLoaded", function () {
-    var btn = document.getElementById("theme-toggle");
+    const btn = document.getElementById("theme-toggle");
     if (!btn) return;
     btn.addEventListener("click", function () {
-      var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      const next = root.dataset.theme === "dark" ? "light" : "dark";
       try {
         localStorage.setItem(STORAGE_KEY, next);
       } catch (_) {}
       apply(next);
       btn.setAttribute("aria-pressed", next === "dark" ? "true" : "false");
     });
-    btn.setAttribute("aria-pressed", root.getAttribute("data-theme") === "dark" ? "true" : "false");
+    btn.setAttribute("aria-pressed", root.dataset.theme === "dark" ? "true" : "false");
   });
 })();
