@@ -175,11 +175,48 @@ export function createApp(config: ServerConfig) {
     }
   });
 
+  // Serve self-hosted web fonts
+  app.get("/fonts/:file", async (c) => {
+    const fileName = c.req.param("file");
+    // Only allow .woff2 files, no path traversal
+    if (!fileName.match(/^[a-z0-9-]+\.woff2$/)) {
+      return c.notFound();
+    }
+    try {
+      const font = await readFile(`./public/fonts/${fileName}`);
+      return c.body(font, 200, {
+        "Content-Type": "font/woff2",
+        "Cache-Control": "public, max-age=31536000, immutable",
+      });
+    } catch {
+      return c.notFound();
+    }
+  });
+
+  // Crawler assets
+  app.get("/robots.txt", async (c) => {
+    try {
+      const txt = await readFile("./public/robots.txt", "utf-8");
+      return c.body(txt, 200, { "Content-Type": "text/plain; charset=utf-8" });
+    } catch {
+      return c.notFound();
+    }
+  });
+
+  app.get("/sitemap.xml", async (c) => {
+    try {
+      const xml = await readFile("./public/sitemap.xml", "utf-8");
+      return c.body(xml, 200, { "Content-Type": "application/xml; charset=utf-8" });
+    } catch {
+      return c.notFound();
+    }
+  });
+
   // Root landing page
   app.get("/", async (c) => {
     try {
       const html = await readFile("./public/index.html", "utf-8");
-      c.header("Content-Security-Policy", "default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; img-src 'self' https://raw.githubusercontent.com https://www.google-analytics.com https://*.google-analytics.com https://*.googletagmanager.com; frame-ancestors 'none'");
+      c.header("Content-Security-Policy", "default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; img-src 'self' https://raw.githubusercontent.com https://www.google-analytics.com https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self'; frame-ancestors 'none'");
       return c.html(html);
     } catch {
       return c.notFound();
