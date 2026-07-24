@@ -1,0 +1,14 @@
+# robots.txt for https://withings-mcp.com
+# The landing page (/) is the only content meant for search engines.
+# OAuth and MCP protocol endpoints are machine-to-machine and must not be crawled.
+
+User-agent: *
+Disallow: /authorize
+Disallow: /callback
+Disallow: /token
+Disallow: /register
+Disallow: /mcp
+Disallow: /auth/
+Disallow: /.well-known/
+
+Sitemap: https://withings-mcp.com/sitemap.xml

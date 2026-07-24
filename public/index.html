@@ -1,180 +1,362 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Withings MCP Server - Access Health Data Through Claude AI</title>
-    <meta name="description" content="Connect your Withings health devices to Claude AI using the Model Context Protocol. Track sleep, weight, heart rate, workouts, and body composition through natural conversation." />
-    <meta name="keywords" content="Withings, MCP, Model Context Protocol, Claude AI, health data, sleep tracking, heart rate, body composition, ECG, smart scale, fitness tracker" />
-    <link rel="icon" href="/favicon.ico" />
-    <link rel="canonical" href="https://withings-mcp.com/" />
-    <meta property="og:title" content="Withings MCP Server - Access Health Data Through Claude AI" />
-    <meta property="og:description" content="Connect your Withings health devices to Claude AI. Track sleep, weight, heart rate, workouts, and body composition through natural conversation." />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://withings-mcp.com/" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Withings MCP Server - Health Data for Claude AI" />
-    <meta name="twitter:description" content="Connect Withings health devices to Claude AI using the Model Context Protocol. Sleep, weight, heart rate, and more." />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withings MCP Server | Connect Withings to Claude &amp; ChatGPT</title>
+    <meta name="description" content="Free, open-source MCP server that connects Withings health data to Claude and ChatGPT. Ask about sleep, weight, heart & activity. Read-only, encrypted.">
+    <link rel="icon" href="/favicon.ico">
+    <link rel="canonical" href="https://withings-mcp.com/">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f7f9fc">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#060b14">
+    <meta property="og:site_name" content="Withings MCP Server">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://withings-mcp.com/">
+    <meta property="og:title" content="Withings MCP Server — Connect Withings to Claude &amp; ChatGPT">
+    <meta property="og:description" content="Free, open-source MCP server for Withings health data. Analyze sleep, weight, heart rate, ECG & workouts with Claude, ChatGPT, or any MCP client. Read-only, encrypted, revoke anytime.">
+    <!-- og:image pending: once /og.png (1200x630) exists, add og:image tags and switch twitter:card to summary_large_image -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Withings MCP Server — Your Health Data in Claude &amp; ChatGPT">
+    <meta name="twitter:description" content="One server URL connects every Withings device to Claude and ChatGPT. Sleep, body composition, heart & activity — read-only, open source, free.">
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "Withings MCP Server",
-      "description": "A Model Context Protocol server that connects Withings health devices to Claude AI for natural language health data analysis.",
-      "url": "https://withings-mcp.com",
-      "applicationCategory": "HealthApplication",
-      "operatingSystem": "Web",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-      "author": { "@type": "Person", "name": "akutishevsky", "url": "https://github.com/akutishevsky" }
-    }
+    {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Withings MCP Server","description":"A free, open-source Model Context Protocol (MCP) server that connects Withings health devices to AI assistants like Claude and ChatGPT for natural-language analysis of sleep, body measurements, heart health, and activity data.","url":"https://withings-mcp.com/","applicationCategory":"HealthApplication","operatingSystem":"Web","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"license":"https://github.com/akutishevsky/withings-mcp/blob/main/LICENSE","softwareHelp":{"@type":"CreativeWork","url":"https://github.com/akutishevsky/withings-mcp"},"featureList":["Works with Claude, ChatGPT, and any MCP-compatible client","Sleep stages, duration, heart rate during sleep, breathing quality and sleep score","Weight, body composition, blood pressure and temperature","Steps, workouts, calories and intraday activity","ECG recordings, waveform data and atrial fibrillation detection","Read-only access via OAuth 2.0 with PKCE, tokens encrypted with AES-256-GCM"],"author":{"@type":"Person","name":"akutishevsky","url":"https://github.com/akutishevsky"}}
     </script>
-    <link rel="stylesheet" href="/styles/index.css" />
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is the Withings MCP server?","acceptedAnswer":{"@type":"Answer","text":"It's a free, open-source remote MCP (Model Context Protocol) server that connects your Withings health devices to AI assistants like Claude and ChatGPT. Instead of scrolling through the Withings app, you ask questions in any language — \"How has my sleep changed this month?\" — and your AI assistant reads the data and answers, with full analysis."}},{"@type":"Question","name":"Can I connect Withings to ChatGPT?","acceptedAnswer":{"@type":"Answer","text":"Yes. ChatGPT supports MCP connectors, so you can add https://withings-mcp.com/mcp as a connector, authorize with your Withings account, and start asking about your sleep, weight, heart, and activity data directly in ChatGPT. Access is read-only and handled through OAuth 2.0 — ChatGPT never sees your Withings password, and you can revoke access anytime."}},{"@type":"Question","name":"How do I connect Withings to Claude?","acceptedAnswer":{"@type":"Answer","text":"Add https://withings-mcp.com/mcp as a custom connector in Claude on desktop or web, then authorize with your Withings account when prompted. Once added, the connector also appears in the Claude mobile app on iOS and Android. From there, just ask — Claude uses the server's read-only tools to pull and analyze your data."}},{"@type":"Question","name":"Which Withings devices are supported?","acceptedAnswer":{"@type":"Answer","text":"All of them. Any device that syncs to your Withings account works, including Body Smart and Body Comp smart scales, ScanWatch and ScanWatch Light hybrid smartwatches, the Sleep Analyzer sleep mat, BPM Connect and BPM Core blood pressure monitors, and the Thermo smart thermometer. No per-device setup needed."}},{"@type":"Question","name":"What health data can the AI analyze?","acceptedAnswer":{"@type":"Answer","text":"Twelve tools cover four areas: sleep (stages, duration, heart rate during sleep, breathing quality, sleep score), body (weight, body composition, blood pressure, temperature), activity (steps, workouts, calories, minute-level intraday data), and heart (ECG recordings, raw waveforms, atrial fibrillation detection). Devices and goals are available too. Everything your Withings devices capture, your AI can analyze."}},{"@type":"Question","name":"How does it work, and is my health data secure?","acceptedAnswer":{"@type":"Answer","text":"MCP is an open standard created by Anthropic that lets AI assistants securely connect to external data. This server authenticates you with Withings via OAuth 2.0 with PKCE — your credentials are never shared with the AI. Access is strictly read-only, tokens are encrypted at rest with AES-256-GCM, and no health data is stored or logged beyond the active session. You can revoke access at any time from your Withings account settings."}},{"@type":"Question","name":"Is the Withings MCP server free and open source?","acceptedAnswer":{"@type":"Answer","text":"Yes — completely free, with no accounts, subscriptions, or API keys. The full source code is published under the MIT license at github.com/akutishevsky/withings-mcp, so you can audit exactly how your data is handled, self-host it, or contribute. If you find it useful, you can support server costs on Patreon."}}]}
+    </script>
+    <link rel="preload" href="/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/styles/fontawesome.css">
+    <link rel="stylesheet" href="/styles/index.css">
+    <script src="/scripts/theme.js"></script>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZMGF9WXL3W"></script>
     <script src="/scripts/gtag.js"></script>
   </head>
   <body>
-    <div class="container">
-      <header class="hero">
-        <div class="status-badge" id="status-badge">
-          <span class="status-dot" id="status-dot"></span>
-          <span id="status-text">Checking...</span>
+    <div class="backdrop" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <nav class="topbar-inner" aria-label="Primary">
+        <a class="brand" href="/">
+          <span class="brand-mark"><i class="fa-solid fa-heart-pulse" aria-hidden="true"></i></span>
+          <span class="brand-name">Withings&nbsp;MCP</span>
+        </a>
+        <div class="topbar-actions">
+          <a class="topbar-link" href="https://github.com/akutishevsky/withings-mcp" target="_blank" rel="noopener noreferrer">
+            <i class="fa-brands fa-github" aria-hidden="true"></i>
+            <span class="topbar-link-text">GitHub</span>
+          </a>
+          <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">
+            <i class="fa-solid fa-moon icon-moon" aria-hidden="true"></i>
+            <i class="fa-solid fa-sun icon-sun" aria-hidden="true"></i>
+          </button>
         </div>
-        <h1>Withings MCP Server</h1>
-        <p class="subtitle">
-          Access your Withings health data through Claude using the
-          Model Context Protocol
-        </p>
-        <a
-          class="support-link"
-          href="https://patreon.com/akutishevskyi?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink"
-          target="_blank"
-          rel="noopener noreferrer"
-          >Help me pay for the servers on Patreon</a
-        >
-      </header>
+      </nav>
+    </header>
 
-      <section class="card quick-setup">
-        <h2>Quick Setup</h2>
-        <div class="tabs-wrap">
-          <input type="radio" name="tab" id="tab-claude" class="tab-input" checked />
-          <input type="radio" name="tab" id="tab-other" class="tab-input" />
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="container hero-inner">
+          <div class="status-badge" id="status-badge"><span class="status-dot" id="status-dot"></span><span id="status-text">Checking...</span></div>
 
-          <div class="tabs">
-            <label for="tab-claude" class="tab-label tab-claude-label">Claude</label>
-            <label for="tab-other" class="tab-label tab-other-label">Other Clients</label>
+          <p class="eyebrow">Free &amp; open-source remote MCP server</p>
+
+          <h1 class="hero-title" id="hero-title">
+            Your Withings health data,<br>
+            <span class="gradient-text">inside Claude and ChatGPT.</span>
+          </h1>
+
+          <p class="hero-sub">
+            A free, open-source Withings MCP server that connects your scale,
+            watch, and sleep tracker to Claude, ChatGPT, or any MCP client. Ask
+            about your sleep, weight, heart, and activity in any language
+            &mdash; no dashboards, no exports.
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#setup">Connect in minutes</a>
+            <a
+              class="btn btn-ghost"
+              href="https://patreon.com/akutishevskyi?utm_medium=unknown&amp;utm_source=join_link&amp;utm_campaign=creatorshare_creator&amp;utm_content=copyLink"
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+            >
+              <i class="fa-brands fa-patreon" aria-hidden="true"></i>
+              Help cover server costs on Patreon
+            </a>
           </div>
 
-          <div class="tab-panel panel-claude">
-            <p class="tab-hint">Works with Claude.ai and the Claude desktop app. Once connected on desktop, it also appears on your iOS and Android app.</p>
-            <ol>
-              <li>
-                Click <strong>Customize</strong>, then
-                <strong>Connectors</strong>
-              </li>
-              <li>Click the <strong>+</strong> button, then <strong>Add Custom Connector</strong></li>
-              <li>
-                Set the name and Remote MCP Server URL to
-                <code>https://withings-mcp.com/mcp</code>
-              </li>
-              <li>Click <strong>Connect</strong> and authorize with your Withings account</li>
-            </ol>
-          </div>
+          <ul class="trust-chips" aria-label="Highlights">
+            <li class="chip"><i class="fa-solid fa-code" aria-hidden="true"></i>Open source (MIT)</li>
+            <li class="chip"><i class="fa-solid fa-lock" aria-hidden="true"></i>OAuth 2.0 + PKCE</li>
+            <li class="chip"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i>Read-only access</li>
+            <li class="chip"><i class="fa-solid fa-chart-line" aria-hidden="true"></i>12 health tools</li>
+          </ul>
+        </div>
+      </section>
 
-          <div class="tab-panel panel-other">
-            <p class="tab-hint">Add to your MCP client configuration:</p>
-            <pre class="code-block">{
+      <section class="works-with" aria-label="Compatible clients">
+        <div class="container works-with-inner">
+          <p class="works-with-text">
+            Works with Claude, ChatGPT, and any MCP-compatible client &mdash;
+            one server URL, no API keys, no code.
+          </p>
+          <ul class="client-badges" aria-label="Clients">
+            <li class="client-badge"><i class="fa-solid fa-comments" aria-hidden="true"></i>Claude</li>
+            <li class="client-badge"><i class="fa-brands fa-openai" aria-hidden="true"></i>ChatGPT</li>
+            <li class="client-badge"><i class="fa-solid fa-plug" aria-hidden="true"></i>Any MCP client</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="how-title">
+        <div class="container">
+          <h2 class="section-title" id="how-title">How it works</h2>
+          <p class="section-lead">
+            Three steps from Withings account to AI-powered answers. No install,
+            no scripts &mdash; the server runs remotely at
+            <code>withings-mcp.com/mcp</code>.
+          </p>
+
+          <ol class="steps-grid">
+            <li class="step-card">
+              <span class="step-num" aria-hidden="true">01</span>
+              <span class="step-icon" aria-hidden="true"><i class="fa-solid fa-link"></i></span>
+              <h3>Connect</h3>
+              <p>Add <code>https://withings-mcp.com/mcp</code> as a connector in Claude, ChatGPT, or your MCP client of choice.</p>
+            </li>
+            <li class="step-card">
+              <span class="step-num" aria-hidden="true">02</span>
+              <span class="step-icon" aria-hidden="true"><i class="fa-solid fa-lock"></i></span>
+              <h3>Authorize</h3>
+              <p>Sign in with your Withings account via OAuth 2.0 &mdash; your password never touches the server, and access is read-only.</p>
+            </li>
+            <li class="step-card">
+              <span class="step-num" aria-hidden="true">03</span>
+              <span class="step-icon" aria-hidden="true"><i class="fa-solid fa-comments"></i></span>
+              <h3>Ask</h3>
+              <p>Ask anything &mdash; "How did I sleep this month?" &mdash; and your AI assistant pulls the data and analyzes it on the spot.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="features-title">
+        <div class="container">
+          <h2 class="section-title" id="features-title">What your AI can analyze</h2>
+          <p class="section-lead">
+            Twelve read-only tools expose every metric your Withings devices
+            capture &mdash; so Claude and ChatGPT can spot the trends you'd miss.
+          </p>
+
+          <div class="feature-grid">
+            <article class="feature-card">
+              <span class="feature-icon feature-icon-sleep" aria-hidden="true"><i class="fa-solid fa-moon"></i></span>
+              <h3>Sleep</h3>
+              <p>Sleep stages, duration, heart rate during sleep, breathing quality, and sleep score &mdash; ready for AI analysis.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon feature-icon-body" aria-hidden="true"><i class="fa-solid fa-weight-scale"></i></span>
+              <h3>Body</h3>
+              <p>Weight trends, full body composition, blood pressure, and temperature readings from your Withings scale and monitors.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon feature-icon-activity" aria-hidden="true"><i class="fa-solid fa-person-running"></i></span>
+              <h3>Activity</h3>
+              <p>Steps, workouts, calories burned, and high-frequency intraday data &mdash; down to minute-level resolution.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon feature-icon-heart" aria-hidden="true"><i class="fa-solid fa-heart"></i></span>
+              <h3>Heart</h3>
+              <p>ECG recordings, raw waveform data, and atrial fibrillation detection results, straight from your ScanWatch or BPM Core.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="setup" aria-labelledby="setup-title">
+        <div class="container">
+          <h2 class="section-title" id="setup-title">Quick setup</h2>
+          <p class="section-lead">
+            Point your client at one URL and authorize with your Withings
+            account. That's the whole install &mdash; Claude, ChatGPT, and other
+            MCP clients below.
+          </p>
+
+          <div class="setup-card">
+            <input type="radio" name="setup-tab" id="tab-claude" class="tab-radio" checked>
+            <input type="radio" name="setup-tab" id="tab-chatgpt" class="tab-radio">
+            <input type="radio" name="setup-tab" id="tab-other" class="tab-radio">
+
+            <div class="tab-list">
+              <label class="tab-label label-claude" for="tab-claude">Claude</label>
+              <label class="tab-label label-chatgpt" for="tab-chatgpt">ChatGPT</label>
+              <label class="tab-label label-other" for="tab-other">Other MCP clients</label>
+            </div>
+
+            <div class="tab-panel panel-claude">
+              <p class="tab-hint">Add the connector once in Claude on desktop or web, and it appears in your iOS and Android app too.</p>
+              <ol class="setup-steps">
+                <li>In Claude on web or desktop, go to <strong>Customize</strong> &rarr; <strong>Connectors</strong></li>
+                <li>Click <strong>+</strong>, then <strong>Add custom connector</strong></li>
+                <li>Set the server URL to <code>https://withings-mcp.com/mcp</code> &mdash; leave the advanced OAuth fields empty</li>
+                <li>Click <strong>Add</strong>, then <strong>Connect</strong>, and sign in with your Withings account</li>
+                <li>In a chat, open the <strong>+</strong> tools menu and make sure the connector is enabled</li>
+              </ol>
+              <p class="tab-note">Available on all Claude plans (Free accounts are limited to one custom connector).</p>
+            </div>
+
+            <div class="tab-panel panel-chatgpt">
+              <p class="tab-hint">ChatGPT runs full MCP connectors in developer mode &mdash; a one-time switch to flip.</p>
+              <ol class="setup-steps">
+                <li>In ChatGPT on the web, open <strong>Settings</strong> &rarr; <strong>Security and login</strong> and turn on <strong>Developer mode</strong></li>
+                <li>Open <strong>Settings</strong> &rarr; <strong>Plugins</strong> (labeled <strong>Apps</strong> in some accounts) and click <strong>+</strong></li>
+                <li>Name it, paste the server URL <code>https://withings-mcp.com/mcp</code>, and choose <strong>OAuth</strong> as authentication &mdash; no client ID or secret needed</li>
+                <li>Confirm, then sign in with your Withings account when the authorization window opens</li>
+                <li>In a new chat, open the <strong>+</strong> menu in the composer, choose <strong>Developer mode</strong>, and select the connector</li>
+              </ol>
+              <p class="tab-note">Requires a ChatGPT Plus, Pro, Business, Enterprise, or Edu plan (web). Business/Enterprise admins must allow developer mode first.</p>
+            </div>
+
+            <div class="tab-panel panel-other">
+              <p class="tab-hint">Any MCP client that supports remote servers with OAuth 2.0 + PKCE can connect with the config below.</p>
+              <pre class="code-block"><code>{
   "mcpServers": {
     "withings": {
       "url": "https://withings-mcp.com/mcp"
     }
   }
-}</pre>
-            <ol>
-              <li>Add the JSON config above to your client's MCP settings</li>
-              <li>The server uses <strong>OAuth 2.0</strong> — your client must support the authorization code flow with PKCE</li>
-              <li>On first connect, authorize with your Withings account</li>
-            </ol>
-          </div>
-        </div>
-      </section>
-
-      <section class="card features">
-        <h2>What you can do</h2>
-        <div class="feature-grid">
-          <div class="feature">
-            <div class="feature-icon">sleep</div>
-            <div>
-              <strong>Sleep</strong>
-              <p>Sleep stages, duration, heart rate, breathing quality</p>
-            </div>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">body</div>
-            <div>
-              <strong>Body</strong>
-              <p>Weight, body composition, blood pressure, temperature</p>
-            </div>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">activity</div>
-            <div>
-              <strong>Activity</strong>
-              <p>Steps, workouts, calories, intraday tracking</p>
-            </div>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">heart</div>
-            <div>
-              <strong>Heart</strong>
-              <p>ECG recordings, waveform data, afib detection</p>
+}</code></pre>
+              <p class="tab-note">Add this to your client's MCP settings &mdash; the server handles OAuth on first connect.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="card demo">
-        <h2>Demo</h2>
-        <a href="https://github.com/akutishevsky/withings-mcp/blob/main/demo/demo.gif" target="_blank">
-          <img src="https://raw.githubusercontent.com/akutishevsky/withings-mcp/main/demo/demo.gif" alt="Withings MCP Server demo showing health data analysis in Claude" class="demo-img" />
-        </a>
+      <section class="section" aria-labelledby="demo-title">
+        <div class="container">
+          <h2 class="section-title" id="demo-title">See it in action</h2>
+          <p class="section-lead">
+            A real conversation: AI analyzing Withings health data through the
+            MCP server &mdash; no exports, no spreadsheets.
+          </p>
+
+          <a
+            class="demo-frame"
+            href="https://github.com/akutishevsky/withings-mcp/blob/main/demo/demo.gif"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open the full demo GIF on GitHub"
+          >
+            <img
+              class="demo-img"
+              src="https://raw.githubusercontent.com/akutishevsky/withings-mcp/main/demo/demo.gif"
+              alt="Demo of the Withings MCP server: an AI assistant analyzing Withings sleep and health data in a chat conversation"
+              loading="lazy"
+            >
+          </a>
+        </div>
       </section>
 
-      <section class="card seo-section">
-        <details>
-          <summary>Learn more about Withings MCP Server</summary>
-          <div class="seo-content">
-            <h2>What is the Withings MCP Server?</h2>
-            <p>The Withings MCP Server is a free, open-source integration that connects your Withings health devices to Claude AI using the <strong>Model Context Protocol (MCP)</strong>. Instead of manually checking the Withings app for your health data, you can ask Claude questions in plain English and get instant, AI-powered analysis of your health metrics.</p>
+      <section class="section" aria-labelledby="faq-title">
+        <div class="container container-narrow">
+          <h2 class="section-title" id="faq-title">Frequently asked questions</h2>
 
-            <h2>Supported Withings Devices</h2>
-            <p>This server works with all Withings connected health devices, including <strong>Body Smart</strong> and <strong>Body Comp</strong> smart scales, <strong>ScanWatch</strong> and <strong>ScanWatch Light</strong> hybrid smartwatches, <strong>Sleep Analyzer</strong> sleep tracking mat, <strong>BPM Connect</strong> and <strong>BPM Core</strong> blood pressure monitors, and <strong>Thermo</strong> smart thermometer. Any device that syncs data to your Withings account is automatically accessible through Claude.</p>
+          <div class="faq-list">
+            <details class="faq-item">
+              <summary>
+                <h3>What is the Withings MCP server?</h3>
+                <span class="faq-marker" aria-hidden="true"></span>
+              </summary>
+              <div class="faq-answer">
+                <p>It's a free, open-source remote MCP (Model Context Protocol) server that connects your Withings health devices to AI assistants like Claude and ChatGPT. Instead of scrolling through the Withings app, you ask questions in any language &mdash; "How has my sleep changed this month?" &mdash; and your AI assistant reads the data and answers, with full analysis.</p>
+              </div>
+            </details>
 
-            <h2>Health Data You Can Access</h2>
-            <p><strong>Sleep tracking:</strong> Analyze your sleep stages (light, deep, REM), sleep duration, heart rate during sleep, breathing disturbances, snoring detection, and overall sleep score. Ask Claude to identify patterns in your sleep quality over weeks or months.</p>
-            <p><strong>Body measurements:</strong> Track weight trends, body fat percentage, muscle mass, bone mass, body water percentage, visceral fat, and BMI. Claude can chart your progress toward weight goals and spot trends you might miss.</p>
-            <p><strong>Heart health:</strong> Access ECG recordings, resting heart rate data, blood pressure readings, pulse wave velocity, and atrial fibrillation detection results. Review your cardiovascular health history through conversation.</p>
-            <p><strong>Activity and workouts:</strong> Review daily step counts, distance walked, calories burned, active minutes, elevation climbed, and detailed workout summaries with heart rate zones.</p>
+            <details class="faq-item">
+              <summary>
+                <h3>Can I connect Withings to ChatGPT?</h3>
+                <span class="faq-marker" aria-hidden="true"></span>
+              </summary>
+              <div class="faq-answer">
+                <p>Yes. ChatGPT supports MCP connectors, so you can add <code>https://withings-mcp.com/mcp</code> as a connector, authorize with your Withings account, and start asking about your sleep, weight, heart, and activity data directly in ChatGPT. Access is read-only and handled through OAuth 2.0 &mdash; ChatGPT never sees your Withings password, and you can revoke access anytime.</p>
+              </div>
+            </details>
 
-            <h2>How Does MCP Work?</h2>
-            <p>The <strong>Model Context Protocol</strong> is an open standard developed by Anthropic that allows AI assistants like Claude to securely connect to external data sources. When you connect this server, Claude gains read-only access to your Withings data through a secure OAuth 2.0 flow. Your credentials are never shared with Claude directly - the server handles authentication and only passes health data when you ask for it.</p>
+            <details class="faq-item">
+              <summary>
+                <h3>How do I connect Withings to Claude?</h3>
+                <span class="faq-marker" aria-hidden="true"></span>
+              </summary>
+              <div class="faq-answer">
+                <p>Add <code>https://withings-mcp.com/mcp</code> as a custom connector in Claude on desktop or web, then authorize with your Withings account when prompted. Once added, the connector also appears in the Claude mobile app on iOS and Android. From there, just ask &mdash; Claude uses the server's read-only tools to pull and analyze your data.</p>
+              </div>
+            </details>
 
-            <h2>Privacy and Security</h2>
-            <p>This server is designed with privacy as a priority. All tokens are encrypted at rest using AES-256-GCM. No personal health data is logged or stored on the server beyond what's needed for the active session. The entire codebase is open source so you can verify exactly how your data is handled. You can revoke access at any time from your Withings account settings.</p>
+            <details class="faq-item">
+              <summary>
+                <h3>Which Withings devices are supported?</h3>
+                <span class="faq-marker" aria-hidden="true"></span>
+              </summary>
+              <div class="faq-answer">
+                <p>All of them. Any device that syncs to your Withings account works, including Body Smart and Body Comp smart scales, ScanWatch and ScanWatch Light hybrid smartwatches, the Sleep Analyzer sleep mat, BPM Connect and BPM Core blood pressure monitors, and the Thermo smart thermometer. No per-device setup needed.</p>
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>
+                <h3>What health data can the AI analyze?</h3>
+                <span class="faq-marker" aria-hidden="true"></span>
+              </summary>
+              <div class="faq-answer">
+                <p>Twelve tools cover four areas: sleep (stages, duration, heart rate during sleep, breathing quality, sleep score), body (weight, body composition, blood pressure, temperature), activity (steps, workouts, calories, minute-level intraday data), and heart (ECG recordings, raw waveforms, atrial fibrillation detection). Devices and goals are available too. Everything your Withings devices capture, your AI can analyze.</p>
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>
+                <h3>How does it work, and is my health data secure?</h3>
+                <span class="faq-marker" aria-hidden="true"></span>
+              </summary>
+              <div class="faq-answer">
+                <p>MCP is an open standard created by Anthropic that lets AI assistants securely connect to external data. This server authenticates you with Withings via OAuth 2.0 with PKCE &mdash; your credentials are never shared with the AI. Access is strictly read-only, tokens are encrypted at rest with AES-256-GCM, and no health data is stored or logged beyond the active session. You can revoke access at any time from your Withings account settings.</p>
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>
+                <h3>Is the Withings MCP server free and open source?</h3>
+                <span class="faq-marker" aria-hidden="true"></span>
+              </summary>
+              <div class="faq-answer">
+                <p>Yes &mdash; completely free, with no accounts, subscriptions, or API keys. The full source code is published under the MIT license at <a href="https://github.com/akutishevsky/withings-mcp" target="_blank" rel="noopener noreferrer">github.com/akutishevsky/withings-mcp</a>, so you can audit exactly how your data is handled, self-host it, or contribute. If you find it useful, you can support server costs on <a href="https://patreon.com/akutishevskyi?utm_medium=unknown&amp;utm_source=join_link&amp;utm_campaign=creatorshare_creator&amp;utm_content=copyLink" target="_blank" rel="noopener noreferrer nofollow">Patreon</a>.</p>
+              </div>
+            </details>
           </div>
-        </details>
+        </div>
       </section>
+    </main>
 
-      <footer class="footer">
-        <div class="footer-links">
-          <a href="https://github.com/akutishevsky/withings-mcp" target="_blank">GitHub</a>
-          <span class="separator"></span>
+    <footer class="footer">
+      <div class="container footer-inner">
+        <nav class="footer-links" aria-label="Footer">
+          <a href="https://github.com/akutishevsky/withings-mcp" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <span class="footer-sep" aria-hidden="true"></span>
           <a href="/.well-known/oauth-authorization-server">OAuth Metadata</a>
-          <span class="separator"></span>
+          <span class="footer-sep" aria-hidden="true"></span>
           <a href="/health">Health Check</a>
-        </div>
-      </footer>
-    </div>
+        </nav>
+        <p class="footer-note">
+          Free and open source under the MIT license. Built on the Model
+          Context Protocol. Not affiliated with, endorsed by, or sponsored by
+          Withings.
+        </p>
+      </div>
+    </footer>
 
     <script src="/scripts/index.js"></script>
   </body>
