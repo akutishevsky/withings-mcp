@@ -9,6 +9,46 @@ import { withAnalytics, TOOL_ANNOTATIONS, toolResponse } from "./index.js";
 import type { SleepSummary } from "../types/withings.js";
 
 export function registerSleepTools(server: McpServer, mcpAccessToken: string) {
+  // Sleep v2 - Get: Dedicated HRV access
+  server.registerTool(
+    "get_hrv",
+    {
+      title: "Heart Rate Variability During Sleep",
+      description:
+        "Get heart rate variability (HRV) captured during sleep at minute-level resolution. Returns RMSSD (root mean square of successive differences) and SDNN (standard deviation of NN intervals) values in milliseconds. Use one sleep period per request: Withings returns at most the first 24 hours after startdate. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', or 'last night'), check if there is a date/time MCP tool available to detect the current date and time first.",
+      inputSchema: z.object({
+        startdate: z
+          .string()
+          .describe(
+            "Sleep period start date in YYYY-MM-DD format (e.g., '2025-11-17'). The date represents midnight UTC of that day."
+          ),
+        enddate: z
+          .string()
+          .describe(
+            "Sleep period end date in YYYY-MM-DD format (e.g., '2025-11-18'). Maximum 24h range from startdate."
+          ),
+      }),
+      annotations: TOOL_ANNOTATIONS,
+    },
+    (args) => {
+      return withAnalytics(
+        "get_hrv",
+        async () => {
+          const hrvData = await getSleep(
+            mcpAccessToken,
+            args.startdate,
+            args.enddate,
+            "rmssd,sdnn_1"
+          );
+
+          return toolResponse(addReadableTimestamps(hrvData));
+        },
+        { mcpAccessToken },
+        args
+      );
+    }
+  );
+
   // Sleep v2 - Get: High-frequency sleep data with timestamps
   server.registerTool(
     "get_sleep",

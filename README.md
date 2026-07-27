@@ -119,6 +119,7 @@ After authorization, Claude will have access to your Withings data!
 Once connected, Claude can use these tools to access your data:
 
 #### Sleep & Activity
+- `get_hrv` - Minute-level RMSSD and SDNN heart-rate variability captured during sleep
 - `get_sleep_summary` - Sleep duration, stages (light/deep/REM), heart rate, breathing, sleep score
 - `get_activity` - Daily steps, distance, calories, elevation, activity durations
 - `get_intraday_activity` - High-frequency activity data throughout the day
