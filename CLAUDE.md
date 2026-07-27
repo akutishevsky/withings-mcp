@@ -44,7 +44,7 @@ src/
 │   └── rate-limiter.ts      # Rate limiting middleware using Supabase
 ├── tools/                    # MCP tools organized by Withings API category
 │   ├── index.ts             # Registers all tools on MCP server instances
-│   ├── sleep.ts             # Sleep API: get_sleep, get_sleep_summary
+│   ├── sleep.ts             # Sleep API: get_sleep, get_sleep_summary, get_hrv
 │   ├── measure.ts           # Measure API: get_measures, get_workouts, get_activity, get_intraday_activity
 │   ├── user.ts              # User API: get_user_devices, get_user_goals
 │   ├── heart.ts             # Heart API: list_heart_records, get_heart_signal
@@ -327,7 +327,7 @@ See `.env.example` for template.
 
 ## MCP Tools
 
-The server implements 12 MCP tools for accessing Withings health data, organized by Withings API category. All tools are registered via `registerAllTools()` (src/tools/index.ts) on per-session `McpServer` instances to ensure proper session isolation.
+The server implements 13 MCP tools for accessing Withings health data, organized by Withings API category. All tools are registered via `registerAllTools()` (src/tools/index.ts) on per-session `McpServer` instances to ensure proper session isolation.
 
 **Date Parameters:** All tools that accept date parameters use YYYY-MM-DD format (e.g., "2025-11-17"). The server automatically converts these to Unix timestamps before calling the Withings API.
 
@@ -357,6 +357,18 @@ Retrieves sleep summary data including:
 - `enddateymd`: End date (YYYY-MM-DD format)
 - `lastupdate`: Unix timestamp for sync (alternative to date range)
 - `data_fields`: Optional comma-separated list of specific fields
+
+#### get_hrv
+
+Retrieves heart rate variability captured during sleep at minute-level resolution. A thin wrapper over the same `/v2/sleep` `get` action as `get_sleep`, with `data_fields` hardcoded to `rmssd,sdnn_1,hrv_quality` — it exists for discoverability, since clients rarely guess the Withings field names on their own.
+
+**Parameters:**
+- `startdate`: Start date (YYYY-MM-DD format, e.g., '2025-11-17')
+- `enddate`: End date (YYYY-MM-DD format, max 24h range from startdate)
+
+**Response shape:** Each `series` entry carries `rmssd`, `sdnn_1`, and `hrv_quality` as **timestamp-keyed maps** (`Record<string, number>`), the same shape as `hr`/`rr`/`snoring` — not scalars. RMSSD and SDNN are in milliseconds; `hrv_quality` is a per-sample confidence score. `addReadableTimestamps()` converts the entry-level `startdate`/`enddate`, but the sample map **keys stay as raw Unix seconds** because the transform walks values, not keys.
+
+**Note:** Dates convert to midnight UTC, so the window is a UTC calendar day rather than a sleep period — a single night can straddle two requests for non-UTC users, and one request can return the tail of one night plus the onset of the next.
 
 ### Measure Tools (src/tools/measure.ts)
 
@@ -567,9 +579,9 @@ Tools are registered using a centralized approach:
 - `src/tools/index.ts` provides `registerAllTools()` to register all tools at once
 - Tools receive the `mcpAccessToken` as a closure parameter for authentication
 - Each tool includes a human-friendly `title` (e.g., `get_sleep` → "Sleep Data")
-- Each tool defines an `outputSchema` (Zod) describing the response structure, using `.passthrough()` on objects to allow dynamic API fields
+- Tools do **not** declare an `outputSchema` — Withings payloads carry dynamic, device-dependent fields, so response shapes are documented per tool here rather than described statically
 - Each tool includes `annotations` (`readOnlyHint: true`, `destructiveHint: false`, `openWorldHint: true`) since all tools are read-only Withings API queries
-- Tool handlers return both `structuredContent` (raw data object) and `content` (JSON-stringified text) for backward compatibility
+- Tool handlers return their payload through `toolResponse()` (src/tools/index.ts) as a single JSON-stringified `content` text block — there is no `structuredContent` field
 
 ## Withings API Integration
 
