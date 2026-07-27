@@ -15,7 +15,7 @@ export function registerSleepTools(server: McpServer, mcpAccessToken: string) {
     {
       title: "Heart Rate Variability During Sleep",
       description:
-        "Get heart rate variability (HRV) captured during sleep at minute-level resolution. Returns RMSSD (root mean square of successive differences) and SDNN (standard deviation of NN intervals) values in milliseconds. Use one sleep period per request: Withings returns at most the first 24 hours after startdate. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', or 'last night'), check if there is a date/time MCP tool available to detect the current date and time first.",
+        "Get heart rate variability (HRV) captured during sleep at minute-level resolution. Returns timestamp-keyed maps of RMSSD (root mean square of successive differences), SDNN (standard deviation of NN intervals), and HRV quality scores. RMSSD and SDNN values are in milliseconds; sample-map keys are Unix timestamps in seconds. Use one sleep period per request: Withings returns at most the first 24 hours after startdate. IMPORTANT: Before executing this tool, if the user's request references relative dates (like 'today', 'yesterday', or 'last night'), check if there is a date/time MCP tool available to detect the current date and time first.",
       inputSchema: z.object({
         startdate: z
           .string()
@@ -38,7 +38,7 @@ export function registerSleepTools(server: McpServer, mcpAccessToken: string) {
             mcpAccessToken,
             args.startdate,
             args.enddate,
-            "rmssd,sdnn_1"
+            "rmssd,sdnn_1,hrv_quality"
           );
 
           return toolResponse(addReadableTimestamps(hrvData));

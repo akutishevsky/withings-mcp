@@ -16,8 +16,9 @@ export interface SleepSeries {
   hr?: Record<string, number>;
   rr?: Record<string, number>;
   snoring?: Record<string, number>;
-  rmssd?: number;
-  sdnn_1?: number;
+  rmssd?: Record<string, number>;
+  sdnn_1?: Record<string, number>;
+  hrv_quality?: Record<string, number>;
   [key: string]: unknown;
 }
 
